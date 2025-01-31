@@ -2,7 +2,7 @@ import customtkinter as ctk
 
 
 main = ctk.CTk()
-main.title("MıneOfCryptos")
-main.geometry("220x210")
+main.title("MıneOfCryptosss")
+main.geometry("2220x210")
 
 main.mainloop()
