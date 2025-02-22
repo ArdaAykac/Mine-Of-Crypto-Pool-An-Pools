@@ -1,0 +1,42 @@
+{
+  "items": [
+    {
+      "name": "MıamıWintage",
+      "description": "Gelişmiş Mining performansı en son teknoloji içeren bir mining kartı üstelik RIFX çipini kullanıyor",
+      "Hasrate": 18,
+      "price": 1500,
+      "ChipType": "RIFX",
+      "MoneyType": "Dollars",
+      "Item Type": "GPU",
+      "image": "MıamıWintage.png"
+    },
+    {
+      "name": "Rx210",
+      "description": "Başlangıç için ideal mining performansı çok",
+      "Hasrate": 6,
+      "price": 400,
+      "ChipType": "SUF",
+      "MoneyType": "Dollars",
+      "Item Type": "GPU",
+      "image": "Rx210.png"
+    },
+    {
+      "name": "Racks3X",
+      "description": "3X bar sütunlarına sahip en fazla 3 adet gpu taşıyabilir",
+      "price": 200,
+      "Sütun": 3,
+      "MoneyType": "Dollars",
+      "Item Type": "Racks",
+      "image": "Racks3X.png"
+    },
+    {
+      "name": "racksx5",
+      "description": "5X bar sütunlarına sahip en fazla 3 adet gpu taşıyabilir",
+      "price": 600,
+      "Sütun": 5,
+      "MoneyType": "Dollars",
+      "Item Type": "Racks",
+      "image": "racksx5.png"
+    }
+  ]
+}

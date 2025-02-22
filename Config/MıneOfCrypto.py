@@ -2,6 +2,8 @@ import customtkinter as ctk
 import tkinter as tk
 import time
 import random
+import json
+from PIL import Image
 import os
 
 
@@ -24,7 +26,7 @@ import os
 # Path
 # Variable
 Level = 0
-Balance = 0
+Dollars = 0
 
 def open_inventory():
     user_profile = os.environ.get('USERPROFILE')
@@ -40,12 +42,63 @@ def open_inventory():
     inventory_window.title("Inventory")
     inventory_window.geometry("200x200")
 
-    label = ctk.CTkLabel(inventory_window, text="Inventory Items:")
-    label.pack(pady=10)
+    label_ıtem = ctk.CTkLabel(inventory_window, text="Inventory Items:")
+    label_ıtem.pack(pady=10)
 
     for item in inventory_items:
         item_label = ctk.CTkLabel(inventory_window, text=item)
         item_label.pack(anchor="w", padx=10)
+
+def Shop_system():
+    user_profile = os.environ.get('USERPROFILE')
+    shop_paths = os.path.join(user_profile, 'Documents', 'Mıne Of Crypto', 'Mods', 'CryptoMınıng gane')
+    json_path = os.path.join(shop_paths, 'ıtems.json')
+    pixel_font = ctk.CTkFont(family="Press Start 2P", size=15)
+
+    if not os.path.exists(json_path):
+        print("Mağaza JSON dosyası bulunamadı.")
+        return
+
+    # JSON verisini okur
+    with open(json_path, "r", encoding="utf-8") as file:
+        data = json.load(file)
+
+    shop_items = data.get("items", [])
+
+    shop_window = ctk.CTkToplevel()
+    shop_window.title("Shop")
+    shop_window.geometry("350x500")
+    #Guı
+    #Bar/Frame
+    taskbar = ctk.CTkFrame(shop_window, height=30, corner_radius=0, fg_color="gray")
+    taskbar.pack(fill="x", side="top")
+    #label
+    Dollars_label = ctk.CTkLabel(taskbar,text=f"Dollars:{Dollars}",text_color="Green",font=pixel_font)
+    Dollars_label.pack(side="left")
+
+
+    #Scroll Frame
+    scroll_frame = ctk.CTkScrollableFrame(shop_window, width=330, height=400)
+    scroll_frame.pack(padx=10, pady=5, fill="both", expand=True)
+
+    def select_item(item_name):
+        print(f"{item_name} seçildi!")  
+
+    for item in shop_items:
+        item_name = item.get("name", "Bilinmeyen Ürün")
+        image_path = os.path.join(shop_paths, item.get("image", ""))
+        #Frame
+        item_frame = ctk.CTkFrame(scroll_frame)
+        item_frame.pack(fill="x", padx=10, pady=5)
+
+        if os.path.exists(image_path):  # Eğer görsel dosyası varsa gösterir
+            #İmage
+            img = ctk.CTkImage(Image.open(image_path), size=(50, 50))
+            img_label = ctk.CTkLabel(item_frame, image=img, text="")
+            img_label.pack(side="left", padx=5)
+        #Button
+        item_button = ctk.CTkButton(item_frame, text=item_name, command=lambda n=item_name: select_item(n),text_color="Black") #Burada lambda isimsiz itemler için kullanılıyor
+        item_button.pack(side="left", padx=10)
 
 def start_game_check_files_sys():
     user_profile = os.environ.get('USERPROFILE')
@@ -84,12 +137,17 @@ def start_game_check_files_sys():
             
             taskbar = ctk.CTkFrame(game_window, height=30, corner_radius=0, fg_color="gray")
             taskbar.pack(fill="x", side="top")
+            
 
             inventory_button = tk.Button(taskbar, text="Inventory", command=open_inventory,background="Blue",fg="Red",font=pixel_font)
-            inventory_button.pack(side="right")
+            inventory_button.pack(side="right",padx=10)
+            Shop_Button = tk.Button(taskbar,text="Shop", command=Shop_system,background="Blue",fg="green",font=pixel_font)
+            Shop_Button.pack(side="right",padx=11)
 
             level_label = ctk.CTkLabel(taskbar, text=f"Level: {Level}", text_color="white")
             level_label.pack(side="left", padx=10)
+            Balance_label = ctk.CTkLabel(taskbar,text=f"Dollars: {Dollars}", text_color="Green")
+            Balance_label.pack(side="left",padx=11)
 
             world_selection_win.destroy()
     
@@ -156,7 +214,7 @@ def main():
                 with open(file_path, 'w') as f:
                     f.write(f"Game name: {game_name}\n")
                     f.write(f"Level: {Level}\n")
-                    f.write(f"Balance: {Balance}\n")
+                    f.write(f"Balance: {Dollars}\n")
 
                 print(f"{file_name} dosyası oluşturuldu ve 'Cache' klasörüne kaydedildi.")
                 new_game_win.destroy()
