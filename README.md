@@ -12,3 +12,6 @@ Actualizar archivos del juego Mine Of Crypto
 #Latın
 # M-quid De Crypto-Pool-An-Pools
 Renova fasciculi mei De Crypto ludo
+
+#Notes For Developer
+Bu respository  oyun görselleri için ve diğer herşey içinki güncellemedir
