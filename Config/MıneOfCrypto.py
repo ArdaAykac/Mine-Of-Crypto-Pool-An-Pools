@@ -6,31 +6,15 @@ import json
 from PIL import Image
 import os
 
-
-#path
-#variable
-Level = 0
-
-
-#Animations
-#buttons
-#label
-colors = ["#FF0000", "#00FF00", "#0000FF", "#FFFF00", "#FF00FF", "#00FFFF"]
-color_index = 0
-
-
-import customtkinter as ctk
-import tkinter as tk
-import os
-
 # Path
 # Variable
 Level = 0
 Dollars = 0
 
+
 def open_inventory():
     user_profile = os.environ.get('USERPROFILE')
-    inventory_path = os.path.join(user_profile, 'Documents', 'Mıne Of Crypto', 'Inventory')
+    inventory_path = os.path.join(user_profile, 'Documents', 'Mıne Of Crypto',world_folder,'Inventory' )
 
     if not os.path.exists(inventory_path):
         print("Inventory klasörü bulunamadı.")
@@ -42,8 +26,8 @@ def open_inventory():
     inventory_window.title("Inventory")
     inventory_window.geometry("200x200")
 
-    label_ıtem = ctk.CTkLabel(inventory_window, text="Inventory Items:")
-    label_ıtem.pack(pady=10)
+    label_item = ctk.CTkLabel(inventory_window, text="Inventory Items:")
+    label_item.pack(pady=10)
 
     for item in inventory_items:
         item_label = ctk.CTkLabel(inventory_window, text=item)
@@ -68,16 +52,17 @@ def Shop_system():
     shop_window = ctk.CTkToplevel()
     shop_window.title("Shop")
     shop_window.geometry("350x500")
-    #Guı
-    #Bar/Frame
+    
+    # GUI
+    # Bar/Frame
     taskbar = ctk.CTkFrame(shop_window, height=30, corner_radius=0, fg_color="gray")
     taskbar.pack(fill="x", side="top")
-    #label
-    Dollars_label = ctk.CTkLabel(taskbar,text=f"Dollars:{Dollars}",text_color="Green",font=pixel_font)
+    
+    # Label
+    Dollars_label = ctk.CTkLabel(taskbar, text=f"Dollars: {Dollars}", text_color="Green", font=pixel_font)
     Dollars_label.pack(side="left")
 
-
-    #Scroll Frame
+    # Scroll Frame
     scroll_frame = ctk.CTkScrollableFrame(shop_window, width=330, height=400)
     scroll_frame.pack(padx=10, pady=5, fill="both", expand=True)
 
@@ -87,17 +72,19 @@ def Shop_system():
     for item in shop_items:
         item_name = item.get("name", "Bilinmeyen Ürün")
         image_path = os.path.join(shop_paths, item.get("image", ""))
-        #Frame
+        
+        # Frame
         item_frame = ctk.CTkFrame(scroll_frame)
         item_frame.pack(fill="x", padx=10, pady=5)
 
         if os.path.exists(image_path):  # Eğer görsel dosyası varsa gösterir
-            #İmage
+            # Image
             img = ctk.CTkImage(Image.open(image_path), size=(50, 50))
             img_label = ctk.CTkLabel(item_frame, image=img, text="")
             img_label.pack(side="left", padx=5)
-        #Button
-        item_button = ctk.CTkButton(item_frame, text=item_name, command=lambda n=item_name: select_item(n),text_color="Black") #Burada lambda isimsiz itemler için kullanılıyor
+        
+        # Button
+        item_button = ctk.CTkButton(item_frame, text=item_name, command=lambda n=item_name: select_item(n), text_color="Black")
         item_button.pack(side="left", padx=10)
 
 def start_game_check_files_sys():
@@ -108,8 +95,13 @@ def start_game_check_files_sys():
         print("Cache klasörü bulunamadı.")
         return
     
-    worlds = [f for f in os.listdir(path) if f.endswith(".dat")]
-    
+    # Cache klasöründeki tüm klasörleri al
+    worlds = []
+    for root, dirs, files in os.walk(path):
+        for file in files:
+            if file.endswith(".dat"):
+                worlds.append(os.path.splitext(file)[0])  # Uzantıyı kaldır ve dosya adını ekle
+
     if not worlds:
         print("Kayıtlı dünya bulunamadı.")
         return
@@ -121,33 +113,44 @@ def start_game_check_files_sys():
 
     def start_selected_game():
         selected_world = world_var.get()
+        global world_folder
         if selected_world:
-            world_path = os.path.join(path, selected_world)
             global Level
             
-            with open(world_path, 'r') as file:
+            # Seçilen dünyanın klasörünün tam yolunu bul
+            world_folder = os.path.join(path, selected_world)  # Klasör yolunu al
+            dat_file_path = os.path.join(world_folder, f"{selected_world}.dat")  # Klasör içindeki .dat dosyasının tam yolu
+
+            # .dat dosyasını kontrol et
+            print(f"Seçilen dosya yolu: {dat_file_path}")
+            
+            if not os.path.exists(dat_file_path):
+                print("Seçilen dünya dosyası bulunamadı.")
+                return
+            
+            # .dat dosyasını aç ve işlemleri gerçekleştir
+            with open(dat_file_path, 'r') as file:
                 for line in file:
                     if line.startswith("Level:"):
                         Level = int(line.split(":")[1].strip())
                         break
-            
+                
             game_window = ctk.CTkToplevel()
             game_window.title(f"{selected_world} - Oyun")
             game_window.geometry("400x300")
             
             taskbar = ctk.CTkFrame(game_window, height=30, corner_radius=0, fg_color="gray")
             taskbar.pack(fill="x", side="top")
-            
 
-            inventory_button = tk.Button(taskbar, text="Inventory", command=open_inventory,background="Blue",fg="Red",font=pixel_font)
-            inventory_button.pack(side="right",padx=10)
-            Shop_Button = tk.Button(taskbar,text="Shop", command=Shop_system,background="Blue",fg="green",font=pixel_font)
-            Shop_Button.pack(side="right",padx=11)
+            inventory_button = tk.Button(taskbar, text="Inventory", command=open_inventory, background="Blue", fg="Red", font=pixel_font)
+            inventory_button.pack(side="right", padx=10)
+            Shop_Button = tk.Button(taskbar, text="Shop", command=Shop_system, background="Blue", fg="green", font=pixel_font)
+            Shop_Button.pack(side="right", padx=11)
 
             level_label = ctk.CTkLabel(taskbar, text=f"Level: {Level}", text_color="white")
             level_label.pack(side="left", padx=10)
-            Balance_label = ctk.CTkLabel(taskbar,text=f"Dollars: {Dollars}", text_color="Green")
-            Balance_label.pack(side="left",padx=11)
+            Balance_label = ctk.CTkLabel(taskbar, text=f"Dollars: {Dollars}", text_color="Green")
+            Balance_label.pack(side="left", padx=11)
 
             world_selection_win.destroy()
     
@@ -163,86 +166,107 @@ def start_game_check_files_sys():
     start_button = ctk.CTkButton(world_selection_win, text="Başlat", command=start_selected_game)
     start_button.pack(pady=10)
 
-
-
 def main():
     main=ctk.CTk()
     main.title("Mıne Of Crypto Menu")
     main.geometry("200x200")
     main._set_appearance_mode("Dark")
-    #gui
-    #fonts
+    
+    # GUI
+    # Fonts
     pixel_font = ctk.CTkFont(family="Press Start 2P", size=15)
-    #function
+    
+    # Function
     def new_game_sys():
         new_game_win = ctk.CTkToplevel()
         new_game_win.title("İnfromations")
         new_game_win.geometry("200x200")
         global new_game_label
-        #gui
-        #function
+        
+        # GUI
+        # Function
         def get_game_name_entry_folder():
-            game_name = game_name_entry.get().strip()   
+            game_name = game_name_entry.get().strip() 
+            global games_name  
             if not game_name:
                 print("Lütfen geçerli bir oyun ismi girin.")
                 return
             
             user_profile = os.environ.get('USERPROFILE')
-            path = os.path.join(user_profile, 'Documents', 'Mıne Of Crypto')
+            base_path = os.path.join(user_profile, 'Documents', 'Mıne Of Crypto')
+
+            # Eğer ana dizin yoksa oluştur
+            if not os.path.exists(base_path):
+                os.makedirs(base_path)
             
-            # Eğer dizin yoksa oluşturur
-            if not os.path.exists(path):
-                os.makedirs(path)
-            
-            # Cache klasörünü oluşturur
-            cache_folder = os.path.join(path, 'Cache')
+            # Cache klasörünü oluştur
+            cache_folder = os.path.join(base_path, 'Cache')
             if not os.path.exists(cache_folder):
                 os.makedirs(cache_folder)
                 print(f"Cache klasörü '{cache_folder}' oluşturuldu.")
             else:
                 print("Cache klasörü zaten var.")
+
+            # Oyun için ayrı bir klasör oluştur (Cache'in içinde)
+            game_folder = os.path.join(cache_folder, game_name)
+            if not os.path.exists(game_folder):
+                os.makedirs(game_folder)
+                print(f"'{game_name}' klasörü Cache içinde oluşturuldu.")
+            else:
+                print(f"Hata: '{game_name}' klasörü zaten var.")
+                return  # Aynı ada sahip bir klasör varsa işlemi sonlandır
             
-            # Oyun ismini .dat dosyasına kaydetme
+            # Oyun ismiyle .dat dosyasını oluştur
             file_name = f"{game_name}.dat"
-            file_path = os.path.join(cache_folder, file_name)
-            
-            # Aynı ada sahip bir dosya var mı kontrol et
+            file_path = os.path.join(game_folder, file_name)
+
+            # Eğer dosya zaten varsa hata ver
             if os.path.exists(file_path):
                 print(f"Hata: '{file_name}' dosyası zaten var.")
             else:
-                # Dosyayı oluşturur
                 with open(file_path, 'w') as f:
                     f.write(f"Game name: {game_name}\n")
                     f.write(f"Level: {Level}\n")
                     f.write(f"Balance: {Dollars}\n")
 
-                print(f"{file_name} dosyası oluşturuldu ve 'Cache' klasörüne kaydedildi.")
-                new_game_win.destroy()
-        #anim
-        #frame
-        #entry
-        game_name_entry=ctk.CTkEntry(new_game_win,placeholder_text="Game Name",placeholder_text_color="Blue")
-        game_name_entry.pack(anchor="n",pady=10)
-        #button
-        build_game_button =ctk.CTkRadioButton(new_game_win,text="Build",command=get_game_name_entry_folder)
-        build_game_button.pack()
-        #label
-        new_game_label=ctk.CTkLabel(new_game_win,text="Build New Game", text_color="Orange", font=pixel_font)
-        new_game_label.pack(anchor="s",side="bottom")
-    #frame
-    on_top_frame = ctk.CTkFrame(main,width=80,height=40,corner_radius=0,bg_color="Grey")
-    on_top_frame.pack(fill="x")
-    #button
-    New_game_button = tk.Button(on_top_frame,text="New Game", command=new_game_sys,background="Green",fg="Blue",font=pixel_font)
-    New_game_button.pack(anchor="n",padx=10)
-    start_game_button = tk.Button(main,text="Start Game", command=start_game_check_files_sys,background="Green",fg="Blue",font=pixel_font)
-    start_game_button.pack(anchor="s",pady=10)
-    #entry
-    #label
-    MoonDevelop_label = ctk.CTkLabel(main,text="MoonDevelop",text_color="Blue",font=pixel_font)
-    MoonDevelop_label.pack(side="bottom", anchor="w",pady=10)
-    #mainloop
-    main.mainloop()
+                print(f"{file_name} dosyası oluşturuldu ve '{game_folder}' içine kaydedildi.")
+                inventory_folder = os.path.join(game_folder, 'Inventory')
+            if not os.path.exists(inventory_folder):
+                os.makedirs(inventory_folder)
+                print(f"'Inventory' klasörü '{game_folder}' içinde oluşturuldu.")
+            else:
+                print(f"Hata: 'Inventory' klasörü zaten var.")
+            new_game_win.destroy()  # Yeni oyun penceresini kapat
 
+        # Anim
+        # Frame
+        # Entry
+        game_name_entry = ctk.CTkEntry(new_game_win, placeholder_text="Game Name", placeholder_text_color="Blue")
+        game_name_entry.pack(anchor="n", pady=10)
+
+        # Button
+        build_game_button = ctk.CTkRadioButton(new_game_win, text="Build", command=get_game_name_entry_folder)
+        build_game_button.pack()
+
+        # Label
+        new_game_label = ctk.CTkLabel(new_game_win, text="Build New Game", text_color="Orange", font=pixel_font)
+        new_game_label.pack(anchor="s", side="bottom")
+
+    # Frame
+    on_top_frame = ctk.CTkFrame(main, width=80, height=40, corner_radius=0, bg_color="Grey")
+    on_top_frame.pack(fill="x")
+    
+    # Button
+    New_game_button = tk.Button(on_top_frame, text="New Game", command=new_game_sys, background="Green", fg="Blue", font=pixel_font)
+    New_game_button.pack(anchor="n", padx=10)
+    start_game_button = tk.Button(main, text="Start Game", command=start_game_check_files_sys, background="Green", fg="Blue", font=pixel_font)
+    start_game_button.pack(anchor="s", pady=10)
+
+    # Label
+    MoonDevelop_label = ctk.CTkLabel(main, text="MoonDevelop", text_color="Blue", font=pixel_font)
+    MoonDevelop_label.pack(side="bottom", anchor="w", pady=10)
+
+    # Mainloop
+    main.mainloop()
 
 main()
