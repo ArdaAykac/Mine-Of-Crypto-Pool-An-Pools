@@ -10,6 +10,14 @@ import os
 # Variable
 Level = 0
 Dollars = 0
+#Bills
+electric_bill = 0
+gas_bill = 0
+
+
+#Payment win icon system
+
+
 
 
 def open_inventory():
@@ -32,6 +40,25 @@ def open_inventory():
     for item in inventory_items:
         item_label = ctk.CTkLabel(inventory_window, text=item)
         item_label.pack(anchor="w", padx=10)
+
+def Payment_system():
+    payments_win = tk.Toplevel()
+    payments_win.title("Payments")
+    payments_win.geometry("200x300")
+    user_home = os.path.expanduser("~")
+    icon_path = os.path.join(user_home, "Documents", "Mıne Of Crypto", "Mods","Mine-Of-Crypto-Pool-An-Pools", "ICON","MıneOfCryptoicon1.ico")
+    payments_win.iconbitmap(icon_path)
+
+    #Guı
+    #functions 
+    #Frame
+    background_frame = tk.Frame(payments_win,width=200,height=300,background="Black")
+    background_frame.pack(fill="both")
+    #label
+    #Button
+    #mainloop
+    payments_win.mainloop()
+
 
 def Shop_system():
     user_profile = os.environ.get('USERPROFILE')
@@ -133,6 +160,12 @@ def start_game_check_files_sys():
                 for line in file:
                     if line.startswith("Level:"):
                         Level = int(line.split(":")[1].strip())
+                    if line.startswith("Dollars"):
+                        Dollars = int(line.split(":")[1].strip())
+                    if line.startswith("Electric Bill"):
+                        electric_bill = int(line.split(":")[1].strip())
+                    if line.startswith("Gas Bill"):
+                        gas_bill = int(line.split(":")[1].strip())
                         break
                 
             game_window = ctk.CTkToplevel()
@@ -141,17 +174,25 @@ def start_game_check_files_sys():
             
             taskbar = ctk.CTkFrame(game_window, height=30, corner_radius=0, fg_color="gray")
             taskbar.pack(fill="x", side="top")
+            vertical_bar =ctk.CTkFrame(game_window,height=30,width=90,corner_radius=0,fg_color="grey")
+            vertical_bar.pack(fill="y", side="right")
 
-            inventory_button = tk.Button(taskbar, text="Inventory", command=open_inventory, background="Blue", fg="Red", font=pixel_font)
-            inventory_button.pack(side="right", padx=10)
-            Shop_Button = tk.Button(taskbar, text="Shop", command=Shop_system, background="Blue", fg="green", font=pixel_font)
-            Shop_Button.pack(side="right", padx=11)
+            inventory_button = tk.Button(vertical_bar, text="Inventory", command=open_inventory, background="Blue", fg="Red", font=pixel_font)
+            inventory_button.pack(side="top", padx=10,pady=10)
+            Shop_Button = tk.Button(vertical_bar, text="Shop", command=Shop_system, background="Blue", fg="green", font=pixel_font)
+            Shop_Button.pack(side="top", padx=5,pady=20)
+            payment_bill_button = tk.Button(vertical_bar,text="Payments",command=Payment_system,background="Red")
+            payment_bill_button.pack(side="top",padx=5,pady=20)
 
             level_label = ctk.CTkLabel(taskbar, text=f"Level: {Level}", text_color="white")
             level_label.pack(side="left", padx=10)
-            Balance_label = ctk.CTkLabel(taskbar, text=f"Dollars: {Dollars}", text_color="Green")
-            Balance_label.pack(side="left", padx=11)
-
+            Dollars_label = ctk.CTkLabel(taskbar, text=f"Dollars: {Dollars}", text_color="Green")
+            Dollars_label.pack(side="left", padx=11)
+            electric_bill_label = ctk.CTkLabel(taskbar,text=f"Electric Bill: {electric_bill}",text_color="Blue")
+            electric_bill_label.pack(side="left",padx=7)
+            gas_bill_label=ctk.CTkLabel(taskbar,text=f"Gas Bill:{gas_bill}",text_color="Green")
+            gas_bill_label.pack(side="right",padx=5)
+            
             world_selection_win.destroy()
     
     world_var = tk.StringVar(value=worlds[0])
@@ -171,7 +212,9 @@ def main():
     main.title("Mıne Of Crypto Menu")
     main.geometry("200x200")
     main._set_appearance_mode("Dark")
-    
+    user_home = os.path.expanduser("~")
+    icon_path = os.path.join(user_home, "Documents", "Mıne Of Crypto", "Mods","Mine-Of-Crypto-Pool-An-Pools", "ICON","MınewOfCryptoIcon3.ico")
+    main.iconbitmap(icon_path)
     # GUI
     # Fonts
     pixel_font = ctk.CTkFont(family="Press Start 2P", size=15)
@@ -227,7 +270,9 @@ def main():
                 with open(file_path, 'w') as f:
                     f.write(f"Game name: {game_name}\n")
                     f.write(f"Level: {Level}\n")
-                    f.write(f"Balance: {Dollars}\n")
+                    f.write(f"Dollars: {Dollars}\n")
+                    f.write(f"Electric Bill:{electric_bill}\n")
+                    f.write(f"Gas Bill: {gas_bill}\n")
 
                 print(f"{file_name} dosyası oluşturuldu ve '{game_folder}' içine kaydedildi.")
                 inventory_folder = os.path.join(game_folder, 'Inventory')
