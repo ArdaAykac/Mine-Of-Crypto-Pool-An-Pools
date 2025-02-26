@@ -8,6 +8,8 @@ import os
 
 # Path
 # Variable
+close_electric_sys = True
+close_gas_sys=True
 Level = 0
 Dollars = 0
 #Bills
@@ -15,7 +17,7 @@ electric_bill = 0
 gas_bill = 0
 
 
-#Payment win icon system
+
 
 
 
@@ -52,10 +54,62 @@ def Payment_system():
     #Guı
     #functions 
     #Frame
-    background_frame = tk.Frame(payments_win,width=200,height=300,background="Black")
-    background_frame.pack(fill="both")
+    def payment_system_for_pp():
+        global Dollars, electric_bill, gas_bill, dat_file_path
+
+        if not os.path.exists(dat_file_path):
+            print("Veri dosyası bulunamadı!")
+            return
+
+        # .dat dosyasını oku ve verileri güncelle
+        with open(dat_file_path, 'r') as file:
+            lines = file.readlines()
+
+        for line in lines:
+            if line.startswith("Level:"):
+                Level = int(line.split(":")[1].strip())
+            elif line.startswith("Dollars:"):
+                Dollars = int(line.split(":")[1].strip())
+            elif line.startswith("Electric Bill:"):
+                electric_bill = int(line.split(":")[1].strip())
+            elif line.startswith("Gas Bill:"):
+                gas_bill = int(line.split(":")[1].strip())
+
+        # Ödemeyi gerçekleştir
+        total_bills = electric_bill + gas_bill
+
+        if Dollars >= total_bills:
+            Dollars -= total_bills
+            electric_bill = 0
+            gas_bill = 0
+            print("Faturalar ödendi!")
+            level_label.configure(text=f"Level: {Level}")
+            Dollars_label.configure(text=f"Dollars: {Dollars}")
+            electric_bill_label.configure(text=f"Electric Bill: {electric_bill}")
+            gas_bill_label.configure(text=f"Gas Bill: {gas_bill}")
+
+            with open(dat_file_path, 'w') as file:
+                for line in lines:
+                    if line.startswith("Dollars:"):
+                        file.write(f"Dollars: {Dollars}\n")
+                    elif line.startswith("Electric Bill:"):
+                        file.write("Electric Bill: 0\n")
+                    elif line.startswith("Gas Bill:"):
+                        file.write("Gas Bill: 0\n")
+                    else:
+                        file.write(line)
+        else:
+            print("Yetersiz bakiye! Faturaları ödemek için yeterli paranız yok.")
+        if total_bills > Dollars:
+            close_electric_sys = False
+            close_gas_sys = False
+
+            
+        
     #label
     #Button
+    pay_button=tk.Button(payments_win,text="Pay The Bills",command= payment_system_for_pp)
+    pay_button.pack()
     #mainloop
     payments_win.mainloop()
 
@@ -139,6 +193,7 @@ def start_game_check_files_sys():
     pixel_font = ctk.CTkFont(family="Press Start 2P", size=15)
 
     def start_selected_game():
+        global Dollars,gas_bill,electric_bill,dat_file_path,Dollars_label,level_label,gas_bill_label,electric_bill_label
         selected_world = world_var.get()
         global world_folder
         if selected_world:

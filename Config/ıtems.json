@@ -8,6 +8,7 @@
       "ChipType": "RIFX",
       "MoneyType": "Dollars",
       "Item Type": "GPU",
+      "Needed Power": 300,
       "image": "MıamıWintage.png"
     },
     {
@@ -18,6 +19,7 @@
       "ChipType": "SUF",
       "MoneyType": "Dollars",
       "Item Type": "GPU",
+      "Needed Power":130,
       "image": "Rx210.png"
     },
     {
@@ -27,6 +29,7 @@
       "Sütun": 3,
       "MoneyType": "Dollars",
       "Item Type": "Racks",
+      "Max Kilogram": 60,
       "image": "Racks3X.png"
     },
     {
@@ -36,6 +39,7 @@
       "Sütun": 5,
       "MoneyType": "Dollars",
       "Item Type": "Racks",
+      "Max Kilogram": 70,
       "image": "racksx5.png"
     }
   ]
