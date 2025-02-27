@@ -3,90 +3,176 @@ import tkinter as tk
 import time
 import random
 import json
-from PIL import Image
+from PIL import Image, ImageSequence
 import os
+import shutil
 
-# Path
-# Variable
+# Değişkenler
 close_electric_sys = True
-close_gas_sys=True
+close_gas_sys = True
 Level = 0
 Dollars = 0
-#Bills
 electric_bill = 0
 gas_bill = 0
-
-
-
-
-
-
+world_folder = ""
+dat_file_path = ""
+Dollars_labels = []  # Tüm pencerelerdeki Dollars_label’ları takip etmek için liste
 
 def open_inventory():
     user_profile = os.environ.get('USERPROFILE')
-    inventory_path = os.path.join(user_profile, 'Documents', 'Mıne Of Crypto',world_folder,'Inventory' )
+    inventory_path = os.path.join(user_profile, 'Documents', 'Mıne Of Crypto', world_folder, 'Inventory')
 
     if not os.path.exists(inventory_path):
-        print("Inventory klasörü bulunamadı.")
+        print("Envanter klasörü bulunamadı.")
         return
     
     inventory_items = os.listdir(inventory_path)
 
     inventory_window = ctk.CTkToplevel()
-    inventory_window.title("Inventory")
-    inventory_window.geometry("200x200")
+    inventory_window.title("Envanter")
+    inventory_window.geometry("300x400")
 
-    label_item = ctk.CTkLabel(inventory_window, text="Inventory Items:")
-    label_item.pack(pady=10)
+    scroll_frame = ctk.CTkScrollableFrame(inventory_window, width=280, height=360)
+    scroll_frame.pack(padx=10, pady=10, fill="both", expand=True)
+
+    def animate_gif(img_label, frames, delay=200, frame_num=0):
+        frame = frames[frame_num]
+        img_label.configure(image=frame)
+        inventory_window.after(delay, animate_gif, img_label, frames, delay, (frame_num + 1) % len(frames))
 
     for item in inventory_items:
-        item_label = ctk.CTkLabel(inventory_window, text=item)
-        item_label.pack(anchor="w", padx=10)
+        if item.endswith(".json"):
+            item_frame = ctk.CTkFrame(scroll_frame)
+            item_frame.pack(fill="x", padx=5, pady=5)
+
+            with open(os.path.join(inventory_path, item), 'r') as f:
+                item_data = json.load(f)
+            item_name = item_data.get("name", "Bilinmeyen Ürün")
+
+            image_extensions = [".png", ".jpg", ".gif"]
+            image_file = None
+            for ext in image_extensions:
+                potential_image = os.path.join(inventory_path, item.replace(".json", ext))
+                if os.path.exists(potential_image):
+                    image_file = potential_image
+                    break
+
+            if image_file:
+                if image_file.endswith(".gif"):
+                    gif_image = Image.open(image_file)
+                    frames = [ctk.CTkImage(frame.copy(), size=(30, 30)) for frame in ImageSequence.Iterator(gif_image)]
+                    img_label = ctk.CTkLabel(item_frame, image=frames[0], text="")
+                    img_label.pack(side="left", padx=5)
+                    animate_gif(img_label, frames)
+                else:
+                    img = ctk.CTkImage(Image.open(image_file), size=(30, 30))
+                    img_label = ctk.CTkLabel(item_frame, image=img, text="")
+                    img_label.pack(side="left", padx=5)
+
+            item_label = ctk.CTkLabel(item_frame, text=item_name)
+            item_label.pack(side="left", padx=5)
+
+def update_dollars_in_dat_file(new_dollars):
+    global dat_file_path
+    if not os.path.exists(dat_file_path):
+        print("Veri dosyası bulunamadı!")
+        return
+
+    with open(dat_file_path, 'r') as file:
+        lines = file.readlines()
+
+    with open(dat_file_path, 'w') as file:
+        for line in lines:
+            if line.startswith("Dollars:"):
+                file.write(f"Dollars: {new_dollars}\n")
+            else:
+                file.write(line)
+
+def update_all_dollars():
+    global Dollars, Dollars_labels
+    for label in Dollars_labels:
+        if label.winfo_exists():  # Etiketin hala geçerli olup olmadığını kontrol et
+            label.configure(text=f"Dollars: {Dollars}")
+
+def purchase_item(item, price):
+    global Dollars
+    if Dollars >= price:
+        Dollars -= price
+        update_dollars_in_dat_file(Dollars)
+        
+        user_profile = os.environ.get('USERPROFILE')
+        inventory_path = os.path.join(user_profile, 'Documents', 'Mıne Of Crypto', world_folder, 'Inventory')
+        
+        if not os.path.exists(inventory_path):
+            os.makedirs(inventory_path)
+
+        item_name = item.get("name", "Unknown Item")
+        timestamp = int(time.time())
+        item_file = os.path.join(inventory_path, f"{item_name}_{timestamp}.json")
+        
+        item_details = json.dumps(item)
+        with open(item_file, 'w') as f:
+            f.write(item_details)
+        
+        shop_paths = os.path.join(user_profile, 'Documents', 'Mıne Of Crypto', 'Mods', 'CryptoMınıng gane')
+        image_path = os.path.join(shop_paths, item.get("image", ""))
+        if os.path.exists(image_path):
+            image_dest = os.path.join(inventory_path, f"{item_name}_{timestamp}{os.path.splitext(image_path)[1]}")
+            shutil.copy(image_path, image_dest)
+        
+        print(f"{item_name} başarıyla alındı ve envantere eklendi.")
+        update_all_dollars()
+    else:
+        print("Yetersiz bakiye! Ürün satın alınamadı.")
 
 def Payment_system():
+    global Dollars, electric_bill, gas_bill, dat_file_path, Dollars_labels
+
     payments_win = tk.Toplevel()
-    payments_win.title("Payments")
+    payments_win.title("Ödemeler")
     payments_win.geometry("200x300")
     user_home = os.path.expanduser("~")
-    icon_path = os.path.join(user_home, "Documents", "Mıne Of Crypto", "Mods","Mine-Of-Crypto-Pool-An-Pools", "ICON","MıneOfCryptoicon1.ico")
+    icon_path = os.path.join(user_home, "Documents", "Mıne Of Crypto", "Mods", "Mine-Of-Crypto-Pool-An-Pools", "ICON", "MıneOfCryptoicon1.ico")
     payments_win.iconbitmap(icon_path)
 
-    #Guı
-    #functions 
-    #Frame
-    def payment_system_for_pp():
-        global Dollars, electric_bill, gas_bill, dat_file_path
+    # Etiketleri tanımla
+    pixel_font = ctk.CTkFont(family="Press Start 2P", size=15)
+    Dollars_label_local = ctk.CTkLabel(payments_win, text=f"Dollars: {Dollars}", text_color="Green", font=pixel_font)
+    Dollars_label_local.pack(pady=10)
+    Dollars_labels.append(Dollars_label_local)
+    
+    electric_bill_label = ctk.CTkLabel(payments_win, text=f"Elektrik Faturası: {electric_bill}", text_color="Blue", font=pixel_font)
+    electric_bill_label.pack(pady=10)
+    
+    gas_bill_label = ctk.CTkLabel(payments_win, text=f"Gaz Faturası: {gas_bill}", text_color="Green", font=pixel_font)
+    gas_bill_label.pack(pady=10)
 
+    def payment_system_for_pp():
+        global Dollars, electric_bill, gas_bill
         if not os.path.exists(dat_file_path):
             print("Veri dosyası bulunamadı!")
             return
 
-        # .dat dosyasını oku ve verileri güncelle
         with open(dat_file_path, 'r') as file:
             lines = file.readlines()
 
         for line in lines:
-            if line.startswith("Level:"):
-                Level = int(line.split(":")[1].strip())
-            elif line.startswith("Dollars:"):
+            if line.startswith("Dollars:"):
                 Dollars = int(line.split(":")[1].strip())
             elif line.startswith("Electric Bill:"):
                 electric_bill = int(line.split(":")[1].strip())
             elif line.startswith("Gas Bill:"):
                 gas_bill = int(line.split(":")[1].strip())
 
-        # Ödemeyi gerçekleştir
         total_bills = electric_bill + gas_bill
-
         if Dollars >= total_bills:
             Dollars -= total_bills
             electric_bill = 0
             gas_bill = 0
             print("Faturalar ödendi!")
-            level_label.configure(text=f"Level: {Level}")
-            Dollars_label.configure(text=f"Dollars: {Dollars}")
-            electric_bill_label.configure(text=f"Electric Bill: {electric_bill}")
-            gas_bill_label.configure(text=f"Gas Bill: {gas_bill}")
+            update_all_dollars()
+            electric_bill_label.configure(text=f"Elektrik Faturası: {electric_bill}")
+            gas_bill_label.configure(text=f"Gaz Faturası: {gas_bill}")
 
             with open(dat_file_path, 'w') as file:
                 for line in lines:
@@ -100,105 +186,97 @@ def Payment_system():
                         file.write(line)
         else:
             print("Yetersiz bakiye! Faturaları ödemek için yeterli paranız yok.")
-        if total_bills > Dollars:
-            close_electric_sys = False
-            close_gas_sys = False
 
-            
-        
-    #label
-    #Button
-    pay_button=tk.Button(payments_win,text="Pay The Bills",command= payment_system_for_pp)
-    pay_button.pack()
-    #mainloop
+    pay_button = tk.Button(payments_win, text="Faturaları Öde", command=payment_system_for_pp)
+    pay_button.pack(pady=20)
+
     payments_win.mainloop()
-
 
 def select_item(item_details):
     details_window = ctk.CTkToplevel()
     details_window.title(f"{item_details['name']} Detayları")
     
-    # Label 
     detail_font = ctk.CTkFont(family="Arial", size=12)
-
-    # Ürün detaylarını gösterecek taglar
     for key, value in item_details.items():
         label_text = f"{key}: {value}"
         detail_label = ctk.CTkLabel(details_window, text=label_text, font=detail_font)
         detail_label.pack(pady=5)
 
 def Shop_system():
+    global Dollars, Dollars_labels
     user_profile = os.environ.get('USERPROFILE')
     shop_paths = os.path.join(user_profile, 'Documents', 'Mıne Of Crypto', 'Mods', 'CryptoMınıng gane')
     json_path = os.path.join(shop_paths, 'ıtems.json')
     pixel_font = ctk.CTkFont(family="Press Start 2P", size=15)
 
-    global Dollars, electric_bill, gas_bill, dat_file_path
-
     if not os.path.exists(dat_file_path):
         print("Veri dosyası bulunamadı!")
         return
 
-    # .dat dosyasını oku ve verileri günceller
     with open(dat_file_path, 'r') as file:
         lines = file.readlines()
-
         for line in lines:
-            if line.startswith("Level:"):
-                Level = int(line.split(":")[1].strip())
-            elif line.startswith("Dollars:"):
+            if line.startswith("Dollars:"):
                 Dollars = int(line.split(":")[1].strip())
-            elif line.startswith("Electric Bill:"):
-                electric_bill = int(line.split(":")[1].strip())
-            elif line.startswith("Gas Bill:"):
-                gas_bill = int(line.split(":")[1].strip())
 
     if not os.path.exists(json_path):
         print("Mağaza JSON dosyası bulunamadı.")
         return
 
-    # JSON verisini okur
     with open(json_path, "r", encoding="utf-8") as files:
         data = json.load(files)
 
     shop_items = data.get("items", [])
-
     shop_window = ctk.CTkToplevel()
-    shop_window.title("Shop")
+    shop_window.title("Mağaza")
     shop_window.geometry("350x500")
-    
-    # GUI
-    # Bar/Frame
+
     taskbar = ctk.CTkFrame(shop_window, height=30, corner_radius=0, fg_color="gray")
     taskbar.pack(fill="x", side="top")
     
-    # Label
     Dollars_label = ctk.CTkLabel(taskbar, text=f"Dollars: {Dollars}", text_color="Green", font=pixel_font)
     Dollars_label.pack(side="left")
+    Dollars_labels.append(Dollars_label)
 
-    # Scroll Frame
     scroll_frame = ctk.CTkScrollableFrame(shop_window, width=330, height=400)
     scroll_frame.pack(padx=10, pady=5, fill="both", expand=True)
+
+    def animate_gif(img_label, frames, delay=200, frame_num=0):
+        frame = frames[frame_num]
+        img_label.configure(image=frame)
+        shop_window.after(delay, animate_gif, img_label, frames, delay, (frame_num + 1) % len(frames))
+
+    def buy_item(item):
+        item_price = item.get("price", 0)
+        purchase_item(item, item_price)
 
     for item in shop_items:
         item_name = item.get("name", "Bilinmeyen Ürün")
         image_path = os.path.join(shop_paths, item.get("image", ""))
-        
-        # Frame
+
         item_frame = ctk.CTkFrame(scroll_frame)
         item_frame.pack(fill="x", padx=10, pady=5)
 
-        if os.path.exists(image_path):  # Eğer görsel dosyası varsa gösterir
-            # Image
-            img = ctk.CTkImage(Image.open(image_path), size=(50, 50))
-            img_label = ctk.CTkLabel(item_frame, image=img, text="")
-            img_label.pack(side="left", padx=5)
+        if os.path.exists(image_path):
+            if image_path.lower().endswith(".gif"):
+                gif_image = Image.open(image_path)
+                frames = [ctk.CTkImage(frame.copy(), size=(50, 50)) for frame in ImageSequence.Iterator(gif_image)]
+                img_label = ctk.CTkLabel(item_frame, image=frames[0], text="")
+                img_label.pack(side="left", padx=5)
+                animate_gif(img_label, frames)
+            else:
+                img = ctk.CTkImage(Image.open(image_path), size=(50, 50))
+                img_label = ctk.CTkLabel(item_frame, image=img, text="")
+                img_label.pack(side="left", padx=5)
 
-        # Button
-        item_button = ctk.CTkButton(item_frame, text=item_name, command=lambda details=item: select_item(details), text_color="Black")
+        item_button = ctk.CTkButton(item_frame, text=f"Detaylar: {item_name}", command=lambda details=item: select_item(details), text_color="Black")
         item_button.pack(side="left", padx=10)
 
+        buy_button = ctk.CTkButton(item_frame, text=f"Satın Al: {item.get('price', 0)}$", command=lambda item=item: buy_item(item))
+        buy_button.pack(side="left", padx=10)
+
 def start_game_check_files_sys():
+    global world_folder, dat_file_path, Dollars, electric_bill, gas_bill, Level, Dollars_labels
     user_profile = os.environ.get('USERPROFILE')
     path = os.path.join(user_profile, 'Documents', 'Mıne Of Crypto', 'Cache')
     
@@ -206,13 +284,7 @@ def start_game_check_files_sys():
         print("Cache klasörü bulunamadı.")
         return
     
-    # Cache klasöründeki tüm klasörleri al
-    worlds = []
-    for root, dirs, files in os.walk(path):
-        for file in files:
-            if file.endswith(".dat"):
-                worlds.append(os.path.splitext(file)[0])  # Uzantıyı kaldır ve dosya adını ekle
-
+    worlds = [os.path.splitext(file)[0] for root, dirs, files in os.walk(path) for file in files if file.endswith(".dat")]
     if not worlds:
         print("Kayıtlı dünya bulunamadı.")
         return
@@ -223,65 +295,56 @@ def start_game_check_files_sys():
     pixel_font = ctk.CTkFont(family="Press Start 2P", size=15)
 
     def start_selected_game():
-        global Dollars,gas_bill,electric_bill,dat_file_path,Dollars_label,level_label,gas_bill_label,electric_bill_label
+        global world_folder, dat_file_path, Dollars, electric_bill, gas_bill, Level, Dollars_labels
         selected_world = world_var.get()
-        global world_folder
         if selected_world:
-            global Level
-            
-            # Seçilen dünyanın klasörünün tam yolunu bul
-            world_folder = os.path.join(path, selected_world)  # Klasör yolunu al
-            dat_file_path = os.path.join(world_folder, f"{selected_world}.dat")  # Klasör içindeki .dat dosyasının tam yolu
+            world_folder = os.path.join(path, selected_world)
+            dat_file_path = os.path.join(world_folder, f"{selected_world}.dat")
 
-            # .dat dosyasını kontrol et
-            print(f"Seçilen dosya yolu: {dat_file_path}")
-            
             if not os.path.exists(dat_file_path):
                 print("Seçilen dünya dosyası bulunamadı.")
                 return
-            
-            # .dat dosyasını aç ve işlemleri gerçekleştir
+
             with open(dat_file_path, 'r') as file:
                 for line in file:
                     if line.startswith("Level:"):
                         Level = int(line.split(":")[1].strip())
-                    if line.startswith("Dollars"):
+                    elif line.startswith("Dollars:"):
                         Dollars = int(line.split(":")[1].strip())
-                    if line.startswith("Electric Bill"):
+                    elif line.startswith("Electric Bill:"):
                         electric_bill = int(line.split(":")[1].strip())
-                    if line.startswith("Gas Bill"):
+                    elif line.startswith("Gas Bill:"):
                         gas_bill = int(line.split(":")[1].strip())
-                        break
-                
+
             game_window = ctk.CTkToplevel()
             game_window.title(f"{selected_world} - Oyun")
             game_window.geometry("400x300")
             
             taskbar = ctk.CTkFrame(game_window, height=30, corner_radius=0, fg_color="gray")
             taskbar.pack(fill="x", side="top")
-            vertical_bar =ctk.CTkFrame(game_window,height=30,width=90,corner_radius=0,fg_color="grey")
+            vertical_bar = ctk.CTkFrame(game_window, height=30, width=90, corner_radius=0, fg_color="grey")
             vertical_bar.pack(fill="y", side="right")
 
-            inventory_button = tk.Button(vertical_bar, text="Inventory", command=open_inventory, background="Blue", fg="Red", font=pixel_font)
-            inventory_button.pack(side="top", padx=10,pady=10)
-            Shop_Button = tk.Button(vertical_bar, text="Shop", command=Shop_system, background="Blue", fg="green", font=pixel_font)
-            Shop_Button.pack(side="top", padx=5,pady=20)
-            payment_bill_button = tk.Button(vertical_bar,text="Payments",command=Payment_system,background="Red")
-            payment_bill_button.pack(side="top",padx=5,pady=20)
+            inventory_button = tk.Button(vertical_bar, text="Envanter", command=open_inventory, background="Blue", fg="Red", font=pixel_font)
+            inventory_button.pack(side="top", padx=10, pady=10)
+            Shop_Button = tk.Button(vertical_bar, text="Mağaza", command=Shop_system, background="Blue", fg="green", font=pixel_font)
+            Shop_Button.pack(side="top", padx=5, pady=20)
+            payment_bill_button = tk.Button(vertical_bar, text="Ödemeler", command=Payment_system, background="Red")
+            payment_bill_button.pack(side="top", padx=5, pady=20)
 
-            level_label = ctk.CTkLabel(taskbar, text=f"Level: {Level}", text_color="white")
+            level_label = ctk.CTkLabel(taskbar, text=f"Seviye: {Level}", text_color="white")
             level_label.pack(side="left", padx=10)
             Dollars_label = ctk.CTkLabel(taskbar, text=f"Dollars: {Dollars}", text_color="Green")
             Dollars_label.pack(side="left", padx=11)
-            electric_bill_label = ctk.CTkLabel(taskbar,text=f"Electric Bill: {electric_bill}",text_color="Blue")
-            electric_bill_label.pack(side="left",padx=7)
-            gas_bill_label=ctk.CTkLabel(taskbar,text=f"Gas Bill:{gas_bill}",text_color="Green")
-            gas_bill_label.pack(side="right",padx=5)
+            Dollars_labels.append(Dollars_label)
+            electric_bill_label = ctk.CTkLabel(taskbar, text=f"Elektrik Faturası: {electric_bill}", text_color="Blue")
+            electric_bill_label.pack(side="left", padx=7)
+            gas_bill_label = ctk.CTkLabel(taskbar, text=f"Gaz Faturası: {gas_bill}", text_color="Green")
+            gas_bill_label.pack(side="right", padx=5)
             
             world_selection_win.destroy()
     
     world_var = tk.StringVar(value=worlds[0])
-
     label = ctk.CTkLabel(world_selection_win, text="Bir dünya seçin:")
     label.pack(pady=10)
 
@@ -293,110 +356,81 @@ def start_game_check_files_sys():
     start_button.pack(pady=10)
 
 def main():
-    main=ctk.CTk()
-    main.title("Mıne Of Crypto Menu")
+    main = ctk.CTk()
+    main.title("Mıne Of Crypto Menü")
     main.geometry("200x200")
     main._set_appearance_mode("Dark")
     user_home = os.path.expanduser("~")
-    icon_path = os.path.join(user_home, "Documents", "Mıne Of Crypto", "Mods","Mine-Of-Crypto-Pool-An-Pools", "ICON","MınewOfCryptoIcon3.ico")
+    icon_path = os.path.join(user_home, "Documents", "Mıne Of Crypto", "Mods", "Mine-Of-Crypto-Pool-An-Pools", "ICON", "MınewOfCryptoIcon3.ico")
     main.iconbitmap(icon_path)
-    # GUI
-    # Fonts
+
     pixel_font = ctk.CTkFont(family="Press Start 2P", size=15)
     
-    # Function
     def new_game_sys():
         new_game_win = ctk.CTkToplevel()
-        new_game_win.title("İnfromations")
+        new_game_win.title("Bilgiler")
         new_game_win.geometry("200x200")
-        global new_game_label
-        
-        # GUI
-        # Function
+
         def get_game_name_entry_folder():
-            game_name = game_name_entry.get().strip() 
-            global games_name  
+            game_name = game_name_entry.get().strip()
             if not game_name:
                 print("Lütfen geçerli bir oyun ismi girin.")
                 return
             
             user_profile = os.environ.get('USERPROFILE')
             base_path = os.path.join(user_profile, 'Documents', 'Mıne Of Crypto')
-
-            # Eğer ana dizin yoksa oluştur
             if not os.path.exists(base_path):
                 os.makedirs(base_path)
             
-            # Cache klasörünü oluştur
             cache_folder = os.path.join(base_path, 'Cache')
             if not os.path.exists(cache_folder):
                 os.makedirs(cache_folder)
                 print(f"Cache klasörü '{cache_folder}' oluşturuldu.")
-            else:
-                print("Cache klasörü zaten var.")
 
-            # Oyun için ayrı bir klasör oluştur (Cache'in içinde)
             game_folder = os.path.join(cache_folder, game_name)
             if not os.path.exists(game_folder):
                 os.makedirs(game_folder)
                 print(f"'{game_name}' klasörü Cache içinde oluşturuldu.")
             else:
                 print(f"Hata: '{game_name}' klasörü zaten var.")
-                return  # Aynı ada sahip bir klasör varsa işlemi sonlandır
+                return
             
-            # Oyun ismiyle .dat dosyasını oluştur
             file_name = f"{game_name}.dat"
             file_path = os.path.join(game_folder, file_name)
-
-            # Eğer dosya zaten varsa hata ver
-            if os.path.exists(file_path):
-                print(f"Hata: '{file_name}' dosyası zaten var.")
-            else:
+            if not os.path.exists(file_path):
                 with open(file_path, 'w') as f:
                     f.write(f"Game name: {game_name}\n")
                     f.write(f"Level: {Level}\n")
                     f.write(f"Dollars: {Dollars}\n")
-                    f.write(f"Electric Bill:{electric_bill}\n")
+                    f.write(f"Electric Bill: {electric_bill}\n")
                     f.write(f"Gas Bill: {gas_bill}\n")
-
                 print(f"{file_name} dosyası oluşturuldu ve '{game_folder}' içine kaydedildi.")
                 inventory_folder = os.path.join(game_folder, 'Inventory')
-            if not os.path.exists(inventory_folder):
-                os.makedirs(inventory_folder)
-                print(f"'Inventory' klasörü '{game_folder}' içinde oluşturuldu.")
-            else:
-                print(f"Hata: 'Inventory' klasörü zaten var.")
-            new_game_win.destroy()  # Yeni oyun penceresini kapat
+                if not os.path.exists(inventory_folder):
+                    os.makedirs(inventory_folder)
+                    print(f"'Envanter' klasörü '{game_folder}' içinde oluşturuldu.")
+            new_game_win.destroy()
 
-        # Anim
-        # Frame
-        # Entry
-        game_name_entry = ctk.CTkEntry(new_game_win, placeholder_text="Game Name", placeholder_text_color="Blue")
+        game_name_entry = ctk.CTkEntry(new_game_win, placeholder_text="Oyun Adı", placeholder_text_color="Blue")
         game_name_entry.pack(anchor="n", pady=10)
 
-        # Button
-        build_game_button = ctk.CTkRadioButton(new_game_win, text="Build", command=get_game_name_entry_folder)
+        build_game_button = ctk.CTkButton(new_game_win, text="Oluştur", command=get_game_name_entry_folder)
         build_game_button.pack()
 
-        # Label
-        new_game_label = ctk.CTkLabel(new_game_win, text="Build New Game", text_color="Orange", font=pixel_font)
+        new_game_label = ctk.CTkLabel(new_game_win, text="Yeni Oyun Oluştur", text_color="Orange", font=pixel_font)
         new_game_label.pack(anchor="s", side="bottom")
 
-    # Frame
     on_top_frame = ctk.CTkFrame(main, width=80, height=40, corner_radius=0, bg_color="Grey")
     on_top_frame.pack(fill="x")
     
-    # Button
-    New_game_button = tk.Button(on_top_frame, text="New Game", command=new_game_sys, background="Green", fg="Blue", font=pixel_font)
+    New_game_button = tk.Button(on_top_frame, text="Yeni Oyun", command=new_game_sys, background="Green", fg="Blue", font=pixel_font)
     New_game_button.pack(anchor="n", padx=10)
-    start_game_button = tk.Button(main, text="Start Game", command=start_game_check_files_sys, background="Green", fg="Blue", font=pixel_font)
+    start_game_button = tk.Button(main, text="Oyunu Başlat", command=start_game_check_files_sys, background="Green", fg="Blue", font=pixel_font)
     start_game_button.pack(anchor="s", pady=10)
 
-    # Label
     MoonDevelop_label = ctk.CTkLabel(main, text="MoonDevelop", text_color="Blue", font=pixel_font)
     MoonDevelop_label.pack(side="bottom", anchor="w", pady=10)
 
-    # Mainloop
     main.mainloop()
 
 main()

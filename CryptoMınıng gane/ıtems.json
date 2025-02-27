@@ -12,7 +12,7 @@
       "Kilogram":30,
       "series": "Wintage",
       "Cooler": "No",
-      "image": "MıamıWintage.png"
+      "image": "MıamıWintage.gif"
     },
     {
       "name": "LasWıntage",
@@ -40,7 +40,21 @@
       "Kilogram":60,
       "series": "Vısta",
       "Cooler": "No",
-      "image": "MıamıVısta.png"
+      "image": "MıamıVısta.gif"
+    },
+    {
+      "name": "Lavista",
+      "description": "Lavista ile Ucuz ve Yüksek performans desteği",
+      "Hasrate": 30,
+      "price": 520,
+      "ChipType": "RIFX",
+      "MoneyType": "Dollars",
+      "Item Type": "GPU",
+      "Needed Power":780,
+      "Kilogram":80,
+      "series": "Vısta",
+      "Cooler": "No",
+      "image": "Lavista.gif"
     },
     {
       "name": "Rx210",
