@@ -7,12 +7,14 @@
       "price": 350,
       "ChipType": "RIFX",
       "MoneyType": "Dollars",
-      "Item Type": "GPU",
-      "Needed Power": 300,
-      "Kilogram":30,
+      "ItemType": "GPU",
+      "NeededPower": 300,
+      "Kilogram": 30,
       "series": "Wintage",
       "Cooler": "No",
-      "image": "MıamıWintage.png"
+      "images": [
+        "MıamıWintage_model1.png"
+      ]
     },
     {
       "name": "LasWıntage",
@@ -21,12 +23,14 @@
       "price": 420,
       "ChipType": "UMT",
       "MoneyType": "Dollars",
-      "Item Type": "GPU",
-      "Needed Power":280,
-      "Kilogram":20,
+      "ItemType": "GPU",
+      "NeededPower": 280,
+      "Kilogram": 20,
       "series": "Wintage",
       "Cooler": "Yes",
-      "image": "Laswıntage.png"
+      "images": [
+        "LasWıntage_model1.png"
+      ]
     },
     {
       "name": "MıamıVısta",
@@ -35,12 +39,34 @@
       "price": 620,
       "ChipType": "RIFX",
       "MoneyType": "Dollars",
-      "Item Type": "GPU",
-      "Needed Power":480,
-      "Kilogram":60,
+      "ItemType": "GPU",
+      "NeededPower": 480,
+      "Kilogram": 60,
       "series": "Vısta",
       "Cooler": "No",
-      "image": "MıamıVısta.png"
+      "images": [
+        "MıamıVısta_model1.png"
+      ]  
+    },
+    {
+      "name": "Lavista",
+      "description": "Vısta serisinin Başı MıamıVısta",
+      "Hasrate": 27,
+      "price": 720,
+      "ChipType": "RIFX",
+      "MoneyType": "Dollars",
+      "ItemType": "GPU",
+      "NeededPower": 380,
+      "Kilogram": 80,
+      "series": "Vısta",
+      "Cooler": "No",
+      "images": [
+        "Lavista0.png",
+        "Lavista1.png",
+        "Lavista2.png",
+        "Lavista3.png",
+        "Lavista4.png"
+      ]
     },
     {
       "name": "Rx210",
@@ -49,32 +75,38 @@
       "price": 400,
       "ChipType": "SUF",
       "MoneyType": "Dollars",
-      "Item Type": "GPU",
-      "Needed Power":250,
-      "Kilogram":30,
+      "ItemType": "GPU",
+      "NeededPower": 250,
+      "Kilogram": 30,
       "series": "Rx",
       "Cooler": "Yes",
-      "image": "Rx210.png"
+      "images": [
+        "Rx210_model1.png"
+      ]
     },
     {
       "name": "Racks3X",
       "description": "3X bar sütunlarına sahip en fazla 3 adet gpu taşıyabilir",
       "price": 200,
-      "Max Gpu": 3,
+      "MaxGpu": 3,
       "MoneyType": "Dollars",
-      "Item Type": "Racks",
-      "Max Kilogram": 60,
-      "image": "Racks3X.png"
+      "ItemType": "Racks",
+      "MaxKilogram": 60,
+      "images": [
+        "Racks3X_model1.png"
+      ]
     },
     {
       "name": "racksx5",
-      "description": "5X bar sütunlarına sahip en fazla 3 adet gpu taşıyabilir",
+      "description": "5X bar sütunlarına sahip en fazla 5 adet gpu taşıyabilir",
       "price": 600,
-      "Max Gpu": 5,
+      "MaxGpu": 5,
       "MoneyType": "Dollars",
-      "Item Type": "Racks",
-      "Max Kilogram": 70,
-      "image": "racksx5.png"
+      "ItemType": "Racks",
+      "MaxKilogram": 70,
+      "images": [
+        "racksx5_model1.png"
+      ]
     }
   ]
 }
