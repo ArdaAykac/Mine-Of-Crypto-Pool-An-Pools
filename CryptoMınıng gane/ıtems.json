@@ -29,6 +29,20 @@
       "image": "Laswıntage.png"
     },
     {
+      "name": "MıamıVısta",
+      "description": "Vısta serisinin Başı MıamıVısta",
+      "Hasrate": 30,
+      "price": 620,
+      "ChipType": "RIFX",
+      "MoneyType": "Dollars",
+      "Item Type": "GPU",
+      "Needed Power":480,
+      "Kilogram":60,
+      "series": "Vısta",
+      "Cooler": "No",
+      "image": "MıamıVısta.png"
+    },
+    {
       "name": "Rx210",
       "description": "Başlangıç için ideal mining performansı çok",
       "Hasrate": 4,
