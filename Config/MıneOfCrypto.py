@@ -114,19 +114,52 @@ def Payment_system():
     payments_win.mainloop()
 
 
+def select_item(item_details):
+    details_window = ctk.CTkToplevel()
+    details_window.title(f"{item_details['name']} Detayları")
+    
+    # Label 
+    detail_font = ctk.CTkFont(family="Arial", size=12)
+
+    # Ürün detaylarını gösterecek taglar
+    for key, value in item_details.items():
+        label_text = f"{key}: {value}"
+        detail_label = ctk.CTkLabel(details_window, text=label_text, font=detail_font)
+        detail_label.pack(pady=5)
+
 def Shop_system():
     user_profile = os.environ.get('USERPROFILE')
     shop_paths = os.path.join(user_profile, 'Documents', 'Mıne Of Crypto', 'Mods', 'CryptoMınıng gane')
     json_path = os.path.join(shop_paths, 'ıtems.json')
     pixel_font = ctk.CTkFont(family="Press Start 2P", size=15)
 
+    global Dollars, electric_bill, gas_bill, dat_file_path
+
+    if not os.path.exists(dat_file_path):
+        print("Veri dosyası bulunamadı!")
+        return
+
+    # .dat dosyasını oku ve verileri günceller
+    with open(dat_file_path, 'r') as file:
+        lines = file.readlines()
+
+        for line in lines:
+            if line.startswith("Level:"):
+                Level = int(line.split(":")[1].strip())
+            elif line.startswith("Dollars:"):
+                Dollars = int(line.split(":")[1].strip())
+            elif line.startswith("Electric Bill:"):
+                electric_bill = int(line.split(":")[1].strip())
+            elif line.startswith("Gas Bill:"):
+                gas_bill = int(line.split(":")[1].strip())
+
     if not os.path.exists(json_path):
         print("Mağaza JSON dosyası bulunamadı.")
         return
 
     # JSON verisini okur
-    with open(json_path, "r", encoding="utf-8") as file:
-        data = json.load(file)
+    with open(json_path, "r", encoding="utf-8") as files:
+        data = json.load(files)
 
     shop_items = data.get("items", [])
 
@@ -147,9 +180,6 @@ def Shop_system():
     scroll_frame = ctk.CTkScrollableFrame(shop_window, width=330, height=400)
     scroll_frame.pack(padx=10, pady=5, fill="both", expand=True)
 
-    def select_item(item_name):
-        print(f"{item_name} seçildi!")  
-
     for item in shop_items:
         item_name = item.get("name", "Bilinmeyen Ürün")
         image_path = os.path.join(shop_paths, item.get("image", ""))
@@ -163,9 +193,9 @@ def Shop_system():
             img = ctk.CTkImage(Image.open(image_path), size=(50, 50))
             img_label = ctk.CTkLabel(item_frame, image=img, text="")
             img_label.pack(side="left", padx=5)
-        
+
         # Button
-        item_button = ctk.CTkButton(item_frame, text=item_name, command=lambda n=item_name: select_item(n), text_color="Black")
+        item_button = ctk.CTkButton(item_frame, text=item_name, command=lambda details=item: select_item(details), text_color="Black")
         item_button.pack(side="left", padx=10)
 
 def start_game_check_files_sys():
