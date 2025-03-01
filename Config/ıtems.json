@@ -89,6 +89,39 @@
       "Item Type": "Racks",
       "Max Kilogram": 70,
       "image": "racksx5.png"
+    },
+    {
+      "name": "RetroPowder",
+      "description": "200W Power Supply RetroPowder",
+      "price": 280,
+      "Power": 300,
+      "PowerType": "W",
+      "MoneyType": "Dollars",
+      "Item Type": "PSU",
+      "Max Kilogram": 5,
+      "image": "RetroPowder.png"
+    },
+    {
+      "name": "MagicMagicPowder",
+      "description": "350W Power Supply MagicMagicPowder",
+      "price": 340,
+      "Power": 450,
+      "PowerType": "W",
+      "MoneyType": "Dollars",
+      "Item Type": "PSU",
+      "Max Kilogram": 7,
+      "image": "MagicMagicPowder.png"
+    },
+    {
+      "name": "CyberC",
+      "description": "200W Power Supply RetroPowder",
+      "price": 480,
+      "Power": 510,
+      "PowerType": "W",
+      "MoneyType": "Dollars",
+      "Item Type": "PSU",
+      "Max Kilogram": 10,
+      "image": "CyberC.gif"
     }
   ]
 }
