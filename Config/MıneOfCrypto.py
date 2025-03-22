@@ -1,24 +1,132 @@
 import customtkinter as ctk
 import tkinter as tk
 import time
-import random
 import json
-from PIL import Image, ImageSequence
+from PIL import Image, ImageSequence,ImageTk
 import os
 import shutil
+import threading
+import random
+import pygame
 
-# Değişkenler
+# Global değişkenler
 close_electric_sys = True
 close_gas_sys = True
-power_types = "w"
+power_types = "W"
+set_timer_stat =False #core loader main loader gibi deflerin yükleme bittiyse devam et durumu
 Level = 0
+xp = 0.000
 Dollars = 900
-electric_bill = 0
 gas_bill = 0
+electric_bill = 0
 total_power = 0
 world_folder = ""
 dat_file_path = ""
 Dollars_labels = []  
+moc_coins = 0.0
+room_temperature = 2  
+active_windows = {}  
+using_power = 0  
+musics_stats = True
+user_profile = os.environ.get('USERPROFILE')
+sounds_path = os.path.join(user_profile, 'Documents', 'Mıne Of Crypto', 'Mods', 'Sounds')
+shop_music = os.path.join(sounds_path, 'İnSlowMotionsMenuSound.mp3')
+main_music_path = os.path.join(sounds_path, 'GameSoundALone.mp3')
+
+
+
+
+
+
+
+def main_loader():
+    global loader_screen_win
+    loader_screen_win = tk.Tk()
+    loader_screen_win.title("MoonDevelopGame")
+    loader_screen_win.geometry("300x300")
+    loader_screen_win.attributes("-toolwindow",True)
+    loader_screen_win.resizable(False, False)
+    loader_screen_win.overrideredirect(False) 
+    #path
+    screen_png_path = os.path.join(user_profile,'Documents', 'Mıne Of Crypto', 'Mods',"ICON")
+    screen_png = os.path.join(screen_png_path, "MoonDevelopGame.png")
+    #Load Sys
+    image = Image.open(screen_png)
+    image = image.resize((300, 300), Image.LANCZOS)
+    logo = ImageTk.PhotoImage(image)
+
+    label = tk.Label(loader_screen_win, image=logo)
+    label.place(x=0, y=0, relwidth=1, relheight=1) 
+
+    #updater
+    loader_screen_win.update_idletasks()
+    screen_width = loader_screen_win.winfo_screenwidth()
+    screen_height  = loader_screen_win.winfo_screenheight()
+    x = (screen_width - 800) // 2
+    y = (screen_height - 600) // 2
+    loader_screen_win.geometry(f"300x300+{x}+{y}")
+    loader_screen_win.after(2000, lambda:[loader_screen_win.destroy(),main()])
+
+
+    loader_screen_win.mainloop()
+
+
+def loader_screen():
+    loader_screen_win = tk.Tk()
+    loader_screen_win.title("MoonDevelopGame")
+    loader_screen_win.geometry("300x300")
+    loader_screen_win.attributes("-toolwindow", True)
+    loader_screen_win.resizable(False, False)
+    loader_screen_win.overrideredirect(True)
+
+    # Path to GIF file
+    screen_gif_path = os.path.join(user_profile, 'Documents', 'Mıne Of Crypto', 'Mods', 'ICON')
+    screen_gif = os.path.join(screen_gif_path, "MoonDevelopGame.gif")
+
+    # Open GIF and get all frames
+    gif_image = Image.open(screen_gif)
+    frames = []
+    try:
+        while True:
+            frames.append(gif_image.copy())  # Save the raw frame images
+            gif_image.seek(gif_image.tell() + 1)
+    except EOFError:
+        pass
+
+    # Create label to display GIF
+    label = tk.Label(loader_screen_win)
+    label.pack(fill=tk.BOTH, expand=True)  # Makes the label fill the entire window
+
+    # Function to update the GIF
+    def update_frame(frame_index):
+        frame = frames[frame_index]
+
+        # Resize the frame to fill the window size
+        width = loader_screen_win.winfo_width()
+        height = loader_screen_win.winfo_height()
+
+        # Resize the frame to match the window size using better quality resampling
+        resized_frame = frame.resize((width, height), Image.Resampling.LANCZOS)
+
+        # Convert resized frame to PhotoImage
+        resized_frame_tk = ImageTk.PhotoImage(resized_frame)
+        label.config(image=resized_frame_tk)
+        label.image = resized_frame_tk  # Keep a reference to avoid garbage collection
+
+        loader_screen_win.after(100, update_frame, (frame_index + 1) % len(frames))  # Update every 100ms
+
+    # Start the animation
+    update_frame(0)
+
+    # Center the window on the screen
+    loader_screen_win.update_idletasks()
+    screen_width = loader_screen_win.winfo_screenwidth()
+    screen_height = loader_screen_win.winfo_screenheight()
+    x = (screen_width - 300) // 2
+    y = (screen_height - 300) // 2
+    loader_screen_win.geometry(f"300x300+{x}+{y}")
+
+    loader_screen_win.mainloop()
 
 
 
@@ -27,23 +135,164 @@ Dollars_labels = []
 
 
 
+
+
+
+
+# Tüm dataları .dat dosyasında günceller
+def update_all_values_in_dat_file():
+    global Dollars, gas_bill, electric_bill, total_power, moc_coins, room_temperature, using_power
+    if not os.path.exists(dat_file_path):
+        print("Veri dosyası bulunamadı!")
+        return
+    with open(dat_file_path, 'r') as file:
+        lines = file.readlines()
+    with open(dat_file_path, 'w') as file:
+        for line in lines:
+            if line.startswith("Dollars:"):
+                file.write(f"Dollars: {Dollars}\n")
+            elif line.startswith("Gas Bill:"):
+                file.write(f"Gas Bill: {gas_bill}\n")
+            elif line.startswith("Electric Bill:"):
+                file.write(f"Electric Bill: {electric_bill}\n")
+            elif line.startswith("Total Power:"):
+                file.write(f"Total Power: {total_power}\n")
+            elif line.startswith("MOC Coins:"):
+                file.write(f"MOC Coins: {moc_coins}\n")
+            elif line.startswith("Room Temperature:"):
+                file.write(f"Room Temperature: {room_temperature}\n")
+            elif line.startswith("Using Power:"):  # Yeni eklenen alan
+                file.write(f"Using Power: {using_power}\n")
+            else:
+                file.write(line)
+        if not any(line.startswith("Electric Bill:") for line in lines):
+            file.write(f"Electric Bill: {electric_bill}\n")
+        if not any(line.startswith("MOC Coins:") for line in lines):
+            file.write(f"MOC Coins: {moc_coins}\n")
+        if not any(line.startswith("Room Temperature:") for line in lines):
+            file.write(f"Room Temperature: {room_temperature}\n")
+        if not any(line.startswith("Using Power:") for line in lines):  
+            file.write(f"Using Power: {using_power}\n")
+    refresh_all_windows()  # Her güncellemede pencereleri yeniler
+
+# Refresher for windows
+def refresh_all_windows():
+    global using_power
+    for window_name, widgets in active_windows.items():
+        if widgets['window'].winfo_exists():
+            for key, widget in widgets.items():
+                if key != 'window' and widget.winfo_exists():
+                    if key == 'Dollars_label':
+                        widget.configure(text=f"Dollars: {Dollars}")
+                    elif key == 'gas_bill_label':
+                        widget.configure(text=f"Gaz Faturası: ${gas_bill}")
+                    elif key == 'electric_bill_label':
+                        widget.configure(text=f"Elektrik Faturası: ${electric_bill}")
+                    elif key == 'total_power_label':
+                        widget.configure(text=f"Toplam Güç: {total_power} {power_types}")
+                    elif key == 'moc_coins_label':
+                        widget.configure(text=f"MOC Coins: {moc_coins:.3f}")
+                    elif key == 'temp_label':
+                        widget.configure(text=f"Oda Sıcaklığı: {room_temperature}°C")
+                    elif key == 'using_power_label':
+                        widget.configure(text=f"Kullanılan Güç: {using_power} W")
+
+# Ayarları kaydetme fonksiyonu
+def save_settings_to_file(music_on, volume_level):
+    settings_file_path = os.path.join(world_folder, "settings.dat")
+    with open(settings_file_path, 'w') as f:
+        f.write(f"Music: {music_on}\n")
+        f.write(f"Volume: {volume_level}\n")
+    print(f"Ayarlar {settings_file_path} dosyasına kaydedildi.")
+
+# Load Settings sys
+def load_settings_from_file():
+    global musics_stats
+    settings_file_path = os.path.join(world_folder, "settings.dat")
+    music_on = True  
+    volume_level = 0.5  
+    
+    if os.path.exists(settings_file_path):
+        with open(settings_file_path, 'r') as f:
+            lines = f.readlines()
+            for line in lines:
+                if line.startswith("Music:"):
+                    music_on = line.split(":")[1].strip() == "True"
+                elif line.startswith("Volume:"):
+                    volume_level = float(line.split(":")[1].strip())
+    
+    # Applying settings
+    musics_stats = music_on
+    pygame.mixer.music.set_volume(volume_level)
+    if music_on and pygame.mixer.music.get_busy():
+        pygame.mixer.music.unpause()
+    elif not music_on:
+        pygame.mixer.music.pause()
+    return music_on, volume_level
+
+# Settings sys
+def Settings_system():
+    global musics_stats
+    settings_window = ctk.CTkToplevel()
+    settings_window.title("Ayarlar")
+    settings_window.geometry("300x200")
+    pixel_font = ctk.CTkFont(family="Press Start 2P", size=12)
+
+    # Mevcut ayarları yükle
+    music_on, volume_level = load_settings_from_file()
+
+    # Ses seviyesini güncelleme fonksiyonu (önce tanımlıyoruz)
+    def update_volume(value):
+        pygame.mixer.music.set_volume(value)
+        volume_label.configure(text=f"Ses Seviyesi: {int(value * 100)}%")
+        save_settings_to_file(musics_stats, value)
+
+    # Müziği açma/kapama fonksiyonu (önce tanımlıyoruz)
+    def toggle_music(state):
+        global musics_stats
+        musics_stats = state
+        if state:
+            pygame.mixer.music.unpause()
+            print("Müzik açıldı.")
+        else:
+            pygame.mixer.music.pause()
+            print("Müzik kapatıldı.")
+        save_settings_to_file(musics_stats, volume_slider.get())
+
+    # Müzik aç/kapa
+    music_var = tk.BooleanVar(value=music_on)
+    music_check = ctk.CTkCheckBox(settings_window, text="Müzik Açık", variable=music_var, font=pixel_font,
+                                  command=lambda: toggle_music(music_var.get()))
+    music_check.pack(pady=10)
+
+    # Ses seviyesi kaydırıcısı
+    volume_label = ctk.CTkLabel(settings_window, text=f"Ses Seviyesi: {int(volume_level * 100)}%", font=pixel_font)
+    volume_label.pack(pady=5)
+    volume_slider = ctk.CTkSlider(settings_window, from_=0, to=1, number_of_steps=100, command=update_volume)
+    volume_slider.set(volume_level)
+    volume_slider.pack(pady=10)
+
+    # Kapatma işlemi
+    def on_close():
+        settings_window.destroy()
+
+    settings_window.protocol("WM_DELETE_WINDOW", on_close)
+
+# ROom Sys
 def Rooms_system():
-    global world_folder, total_power, power_types, Dollars_labels, dat_file_path
+    global world_folder, total_power, power_types, Dollars_labels, dat_file_path, electric_bill, moc_coins, room_temperature, using_power
     
     rooms_window = ctk.CTkToplevel()
     rooms_window.title("Odalar")
-    rooms_window.geometry("500x400")
+    rooms_window.geometry("600x800")
     
-    # Ana çerçeve
     main_frame = ctk.CTkFrame(rooms_window)
     main_frame.pack(fill="both", expand=True, padx=10, pady=10)
     
-    # Sağdaki dikey görev çubuğu
     taskbar = ctk.CTkFrame(rooms_window, width=120, corner_radius=0, fg_color="gray")
-    taskbar.pack(side="right", fill="y", padx=5, pady=5)
+    taskbar.pack(side="right", fill="x", padx=5, pady=5)
     pixel_font = ctk.CTkFont(family="Press Start 2P", size=12)
     
-    # Yol tanımlamaları
     inventory_path = os.path.join(os.environ.get('USERPROFILE'), 'Documents', 'Mıne Of Crypto', world_folder, 'Inventory')
     rooms_path = os.path.join(os.environ.get('USERPROFILE'), 'Documents', 'Mıne Of Crypto', world_folder, 'Rooms')
     psu_path = os.path.join(rooms_path, 'PSU')
@@ -56,18 +305,23 @@ def Rooms_system():
     if not os.path.exists(racks_path):
         os.makedirs(racks_path)
     
-    # Başlangıçta toplam gücü yükle veya hesapla
     def load_or_calculate_total_power():
-        global total_power
+        global total_power, electric_bill, moc_coins, room_temperature, using_power
         if os.path.exists(dat_file_path):
             with open(dat_file_path, 'r') as file:
                 lines = file.readlines()
                 for line in lines:
                     if line.startswith("Total Power:"):
                         total_power = int(line.split(":")[1].strip())
-                        break
+                    elif line.startswith("Electric Bill:"):
+                        electric_bill = float(line.split(":")[1].strip())
+                    elif line.startswith("MOC Coins:"):
+                        moc_coins = float(line.split(":")[1].strip())
+                    elif line.startswith("Room Temperature:"):
+                        room_temperature = float(line.split(":")[1].strip())
+                    elif line.startswith("Using Power:"):
+                        using_power = int(line.split(":")[1].strip())
                 else:
-                    # .dat dosyasında Total Power yoksa PSU'lardan hesapla
                     total_power = 0
                     for item in os.listdir(psu_path):
                         if item.endswith(".json"):
@@ -77,45 +331,42 @@ def Rooms_system():
                                 total_power += item_data.get("Power", 0)
                             except Exception as e:
                                 print(f"PSU gücünü yüklerken hata: {e}")
-                    update_total_power_in_dat_file(total_power)
+                    update_all_values_in_dat_file()
         else:
             print("Veri dosyası bulunamadı, toplam güç sıfırdan başlatılıyor.")
             total_power = 0
     
-    def update_total_power_in_dat_file(power_value):
-        if not os.path.exists(dat_file_path):
-            print("Veri dosyası bulunamadı!")
-            return
-        with open(dat_file_path, 'r') as file:
-            lines = file.readlines()
-        with open(dat_file_path, 'w') as file:
-            found = False
-            for line in lines:
-                if line.startswith("Total Power:"):
-                    file.write(f"Total Power: {power_value}\n")
-                    found = True
-                else:
-                    file.write(line)
-            if not found:
-                file.write(f"Total Power: {power_value}\n")
-    
-    # İlk açılışta toplam gücü yükle
     load_or_calculate_total_power()
     
-    # Odalardaki öğeleri gösterme alanı
-    scroll_frame = ctk.CTkScrollableFrame(main_frame, width=300, height=300)
+    scroll_frame = ctk.CTkScrollableFrame(main_frame, width=400, height=400)
     scroll_frame.pack(fill="both", expand=True)
     
-    # Güç etiketleri
     power_frame = ctk.CTkFrame(main_frame)
     power_frame.pack(fill="x", pady=5)
     total_power_label = ctk.CTkLabel(power_frame, text=f"Toplam Güç: {total_power} {power_types}")
     total_power_label.pack(side="left", padx=5)
-    using_power = 0
     using_power_label = ctk.CTkLabel(power_frame, text=f"Kullanılan Güç: {using_power} W")
     using_power_label.pack(side="right", padx=5)
     
+    electric_bill_label = ctk.CTkLabel(main_frame, text=f"Elektrik Faturası: ${electric_bill:.2f}")
+    electric_bill_label.pack(pady=5)
+    moc_coins_label = ctk.CTkLabel(main_frame, text=f"MOC Coins: {moc_coins:.3f}")
+    moc_coins_label.pack(pady=5)
+    temp_label = ctk.CTkLabel(main_frame, text=f"Oda Sıcaklığı: {room_temperature}°C")
+    temp_label.pack(pady=5)
+    
+    # WindowS Activer
+    active_windows['rooms'] = {
+        'window': rooms_window,
+        'total_power_label': total_power_label,
+        'using_power_label': using_power_label,
+        'electric_bill_label': electric_bill_label,
+        'moc_coins_label': moc_coins_label,
+        'temp_label': temp_label
+    }
+    
     mining_active = False
+    mining_thread = None
     start_mining_button = tk.Button(main_frame, text="Mining Başlat", background="Green", fg="White", font=pixel_font)
     start_mining_button.pack(side="bottom", pady=5)
     stop_mining_button = tk.Button(main_frame, text="Miningi Durdur", background="Red", fg="White", font=pixel_font, state="disabled")
@@ -126,11 +377,14 @@ def Rooms_system():
         try:
             frame = frames[frame_num % len(frames)]
             img_label.configure(image=frame)
-            rooms_window.after(delay, animate_gif, img_label, frames, delay, frame_num + 1)
+            if rooms_window.winfo_exists():
+                rooms_window.after(delay, animate_gif, img_label, frames, delay, frame_num + 1)
         except tk.TclError:
             return
     
     def update_rooms_display():
+        if not rooms_window.winfo_exists():
+            return
         for widget in scroll_frame.winfo_children():
             widget.destroy()
         
@@ -140,6 +394,7 @@ def Rooms_system():
                     with open(os.path.join(rooms_path, item), 'r') as f:
                         item_data = json.load(f)
                     item_name = item_data.get("name", "Bilinmeyen GPU")
+                    damage = item_data.get("Damage", 0)
                     item_frame = ctk.CTkFrame(scroll_frame)
                     item_frame.pack(fill="x", pady=2)
                     
@@ -163,10 +418,11 @@ def Rooms_system():
                             img_label = ctk.CTkLabel(item_frame, image=img, text="")
                             img_label.pack(side="left", padx=5)
                     
-                    item_label = ctk.CTkLabel(item_frame, text=f"GPU: {item_name}")
+                    item_label = ctk.CTkLabel(item_frame, text=f"GPU: {item_name} (Hasar: {damage}%)")
                     item_label.pack(side="left", padx=5)
                     
                     def remove_gpu(selected_item=item):
+                        global using_power
                         shutil.move(os.path.join(rooms_path, selected_item), os.path.join(inventory_path, selected_item))
                         for ext in image_extensions:
                             img_path = os.path.join(rooms_path, selected_item.replace(".json", ext))
@@ -178,14 +434,20 @@ def Rooms_system():
                         update_power_labels()
                         if mining_active:
                             check_mining_status()
+                        refresh_all_windows()  # Yenile
                     
                     tk.Button(item_frame, text="Kaldır", command=remove_gpu, background="Red", fg="White", font=pixel_font).pack(side="right", padx=5)
                 except Exception as e:
                     print(f"GPU gösteriminde hata: {e}")
     
     def update_power_labels():
+        if not rooms_window.winfo_exists():
+            return
         total_power_label.configure(text=f"Toplam Güç: {total_power} {power_types}")
         using_power_label.configure(text=f"Kullanılan Güç: {using_power} W")
+        electric_bill_label.configure(text=f"Elektrik Faturası: ${electric_bill:.2f}")
+        moc_coins_label.configure(text=f"MOC Coins: {moc_coins:.3f}")
+        temp_label.configure(text=f"Oda Sıcaklığı: {room_temperature}°C")
     
     def get_max_gpu_capacity():
         max_gpu_capacity = 0
@@ -203,7 +465,7 @@ def Rooms_system():
         return len([f for f in os.listdir(rooms_path) if f.endswith(".json") and not f.startswith(("PSU_", "Rack_"))])
     
     def calculate_using_power():
-        nonlocal using_power
+        global using_power
         using_power = 0
         for item in os.listdir(rooms_path):
             if item.endswith(".json") and not item.startswith(("PSU_", "Rack_")):
@@ -214,19 +476,71 @@ def Rooms_system():
                 except Exception as e:
                     print(f"GPU gücünü hesaplarken hata: {e}")
         update_power_labels()
+        refresh_all_windows()  # Yenile
     
     def check_mining_status():
         nonlocal mining_active
-        if mining_active and total_power < using_power:
+        if mining_active:
+            if total_power < using_power:
+                stop_mining()
+                print("Toplam güç kullanılan güçten az, mining durduruldu.")
+            elif electric_bill >= 200:
+                stop_mining()
+                print("Elektrik faturası $200 veya daha fazla, mining durduruldu. Lütfen faturayı ödeyin!")
+    
+    def mining_loop():
+        global electric_bill, moc_coins, room_temperature, using_power
+        while mining_active and rooms_window.winfo_exists():
+            mining_interval = random.randint(5, 6)
+            print(mining_interval)
+            time.sleep(mining_interval)
+            if mining_active:
+                moc_coins += 0.001
+                electric_bill += 0.50
+                temp_increase = random.uniform(2, 4)
+                room_temperature += temp_increase
+                print(f"Mining: +0.001 MOC, Elektrik Faturası: ${electric_bill:.2f}, Oda Sıcaklığı: {room_temperature:.1f}°C")
+                
+                if room_temperature >= 10:
+                    for item in os.listdir(rooms_path):
+                        if item.endswith(".json") and not item.startswith(("PSU_", "Rack_")):
+                            try:
+                                item_path = os.path.join(rooms_path, item)
+                                with open(item_path, 'r') as f:
+                                    item_data = json.load(f)
+                                damage = item_data.get("Damage", 0)
+                                if damage < 100:
+                                    item_data["Damage"] = min(100, damage + 1)
+                                    with open(item_path, 'w') as f:
+                                        json.dump(item_data, f)
+                                    print(f"{item_data['name']} hasarı %1 arttı: {item_data['Damage']}%")
+                                    if item_data["Damage"] >= 100:
+                                        shutil.move(item_path, os.path.join(inventory_path, item))
+                                        for ext in [".png", ".jpg", ".gif"]:
+                                            img_path = os.path.join(rooms_path, item.replace(".json", ext))
+                                            if os.path.exists(img_path):
+                                                shutil.move(img_path, os.path.join(inventory_path, item.replace(".json", ext)))
+                                        print(f"{item_data['name']} %100 hasar aldı ve envantere taşındı.")
+                            except Exception as e:
+                                print(f"GPU hasar güncellemesinde hata: {e}")
+                    room_temperature = 2
+                    update_rooms_display()
+                
+                update_power_labels()
+                update_all_values_in_dat_file()
+                check_mining_status()
+        if not rooms_window.winfo_exists():
             stop_mining()
-            print("Toplam güç kullanılan güçten az, mining durduruldu.")
     
     def start_mining():
-        nonlocal mining_active
+        nonlocal mining_active, mining_thread
         if not mining_active:
             gpu_count = count_current_gpus()
             if gpu_count == 0:
                 print("Mining başlatılamaz, GPU bulunamadı.")
+                return
+            if electric_bill >= 200:
+                print("Elektrik faturası $200 veya daha fazla, mining başlatılamaz. Lütfen faturayı ödeyin!")
                 return
             mining_active = True
             print("Mining başladı.")
@@ -241,22 +555,31 @@ def Rooms_system():
                 start_mining_button.config(state="disabled")
                 stop_mining_button.config(state="normal")
                 stop_mining_button.pack(side="bottom", pady=5)
+                mining_thread = threading.Thread(target=mining_loop, daemon=True)
+                mining_thread.start()
+            refresh_all_windows()  # Yenile
     
     def stop_mining():
-        nonlocal mining_active, using_power
+        nonlocal mining_active
+        global using_power
         if mining_active:
             mining_active = False
             print("Mining durduruldu.")
             using_power = 0
             calculate_using_power()
-            start_mining_button.config(state="normal")
-            stop_mining_button.config(state="disabled")
-            stop_mining_button.pack_forget()
+            if rooms_window.winfo_exists():
+                start_mining_button.config(state="normal")
+                stop_mining_button.config(state="disabled")
+                stop_mining_button.pack_forget()
+            update_all_values_in_dat_file()
+            refresh_all_windows()  # Yenile
     
     start_mining_button.config(command=start_mining)
     stop_mining_button.config(command=stop_mining)
     
     def add_gpu():
+        if not rooms_window.winfo_exists():
+            return
         inventory_items = [f for f in os.listdir(inventory_path) if f.endswith(".json")]
         if not inventory_items:
             print("Envanterde .json dosyası bulunamadı.")
@@ -274,7 +597,7 @@ def Rooms_system():
             try:
                 with open(os.path.join(inventory_path, item), 'r') as f:
                     item_data = json.load(f)
-                if item_data.get("Item Type", "Bilinmeyen Tür") == "GPU":
+                if item_data.get("Item Type", "Bilinmeyen Tür") == "GPU" and item_data.get("Damage", 0) < 100:
                     gpu_found = True
                     item_frame = ctk.CTkFrame(scroll_frame_gpu)
                     item_frame.pack(fill="x", pady=5)
@@ -283,6 +606,7 @@ def Rooms_system():
                     item_label.pack(side="left", padx=5)
                     
                     def move_gpu(selected_item=item):
+                        global using_power
                         max_capacity = get_max_gpu_capacity()
                         current_gpus = count_current_gpus()
                         if current_gpus >= max_capacity:
@@ -302,15 +626,18 @@ def Rooms_system():
                         if mining_active:
                             check_mining_status()
                         item_frame.destroy()
+                        refresh_all_windows()  
                     
                     tk.Button(item_frame, text="Ekle", command=move_gpu, background="Blue", fg="White", font=pixel_font).pack(side="right", padx=5)
             except Exception as e:
                 print(f"GPU eklemede hata: {e}")
         
         if not gpu_found:
-            ctk.CTkLabel(scroll_frame_gpu, text="GPU bulunamadı.").pack(pady=10)
+            ctk.CTkLabel(scroll_frame_gpu, text="GPU bulunamadı veya tüm GPU'lar hasarlı.").pack(pady=10)
     
     def psu_rooms():
+        if not rooms_window.winfo_exists():
+            return
         psu_window = ctk.CTkToplevel()
         psu_window.title("PSU Odaları")
         psu_window.geometry("400x400")
@@ -342,7 +669,7 @@ def Rooms_system():
                     item_label.pack(side="left", padx=5)
                     
                     def move_psu(selected_item=item):
-                        global total_power
+                        global total_power, using_power
                         shutil.move(os.path.join(inventory_path, selected_item), os.path.join(psu_path, selected_item))
                         image_ext = [".png", ".jpg", ".gif"]
                         for ext in image_ext:
@@ -354,10 +681,11 @@ def Rooms_system():
                         print(f"{item_data['name']} PSU Odalarına eklendi ve envanterden kaldırıldı.")
                         update_psu_display(scroll_frame_psu)
                         update_power_labels()
-                        update_total_power_in_dat_file(total_power)  # Kalıcı kaydet
+                        update_all_values_in_dat_file()
                         if mining_active:
                             check_mining_status()
                         item_frame.destroy()
+                        refresh_all_windows()  
                     
                     tk.Button(item_frame, text="Ekle", command=move_psu, background="Blue", fg="White", font=pixel_font).pack(side="right", padx=5)
             except Exception as e:
@@ -379,7 +707,7 @@ def Rooms_system():
                         item_label.pack(side="left", padx=5)
                         
                         def remove_psu(selected_item=item):
-                            global total_power
+                            global total_power, using_power
                             shutil.move(os.path.join(psu_path, selected_item), os.path.join(inventory_path, selected_item))
                             image_ext = [".png", ".jpg", ".gif"]
                             for ext in image_ext:
@@ -391,9 +719,10 @@ def Rooms_system():
                             print(f"{item_name} envantere geri taşındı.")
                             update_psu_display(frame)
                             update_power_labels()
-                            update_total_power_in_dat_file(total_power)  # Kalıcı kaydet
+                            update_all_values_in_dat_file()
                             if mining_active:
                                 check_mining_status()
+                            refresh_all_windows()  # Yenile
                         
                         tk.Button(item_frame, text="Kaldır", command=remove_psu, background="Red", fg="White", font=pixel_font).pack(side="right", padx=5)
                     except Exception as e:
@@ -405,6 +734,8 @@ def Rooms_system():
             ctk.CTkLabel(scroll_frame_psu, text="Eklenmiş PSU yok.").pack(pady=10)
     
     def racks_rooms():
+        if not rooms_window.winfo_exists():
+            return
         racks_window = ctk.CTkToplevel()
         racks_window.title("Rack Odaları")
         racks_window.geometry("400x400")
@@ -436,6 +767,7 @@ def Rooms_system():
                     item_label.pack(side="left", padx=5)
                     
                     def move_rack(selected_item=item):
+                        global using_power
                         shutil.move(os.path.join(inventory_path, selected_item), os.path.join(racks_path, selected_item))
                         image_ext = [".png", ".jpg", ".gif"]
                         for ext in image_ext:
@@ -446,6 +778,7 @@ def Rooms_system():
                         update_racks_display(scroll_frame_racks)
                         update_rooms_display()
                         item_frame.destroy()
+                        refresh_all_windows()  # Yenile
                     
                     tk.Button(item_frame, text="Ekle", command=move_rack, background="Blue", fg="White", font=pixel_font).pack(side="right", padx=5)
             except Exception as e:
@@ -467,6 +800,7 @@ def Rooms_system():
                         item_label.pack(side="left", padx=5)
                         
                         def remove_rack(selected_item=item):
+                            global using_power
                             gpu_items = [f for f in os.listdir(rooms_path) if f.endswith(".json") and not f.startswith(("PSU_", "Rack_"))]
                             image_ext = [".png", ".jpg", ".gif"]
                             for gpu in gpu_items:
@@ -489,6 +823,7 @@ def Rooms_system():
                             update_power_labels()
                             if mining_active:
                                 check_mining_status()
+                            refresh_all_windows()  # Yenile
                         
                         tk.Button(item_frame, text="Kaldır", command=remove_rack, background="Red", fg="White", font=pixel_font).pack(side="right", padx=5)
                     except Exception as e:
@@ -499,17 +834,15 @@ def Rooms_system():
             ctk.CTkLabel(scroll_frame_add, text="Envanterde Rack bulunamadı.").pack(pady=10)
             ctk.CTkLabel(scroll_frame_racks, text="Eklenmiş Rack yok.").pack(pady=10)
     
-    # Görev çubuğu butonları
     tk.Button(taskbar, text="GPU Ekle", command=add_gpu, background="Blue", fg="Red", font=pixel_font).pack(side="top", pady=10, anchor="center")
     tk.Button(taskbar, text="PSU Odaları", command=psu_rooms, background="Blue", fg="Green", font=pixel_font).pack(side="top", pady=10, anchor="center")
     tk.Button(taskbar, text="Rack Odaları", command=racks_rooms, background="Blue", fg="Yellow", font=pixel_font).pack(side="top", pady=10, anchor="center")
+    tk.Button(taskbar, text="Coolers", command=None, background="Blue", fg="Cyan", font=pixel_font).pack(side="top", pady=10, anchor="center")
     
     update_rooms_display()
     update_power_labels()
 
-
-
-
+# Envanter açma
 def open_inventory():
     user_profile = os.environ.get('USERPROFILE')
     inventory_path = os.path.join(user_profile, 'Documents', 'Mıne Of Crypto', world_folder, 'Inventory')
@@ -528,9 +861,12 @@ def open_inventory():
     scroll_frame.pack(padx=10, pady=10, fill="both", expand=True)
 
     def animate_gif(img_label, frames, delay=200, frame_num=0):
-        frame = frames[frame_num]
+        if not img_label.winfo_exists() or not inventory_window.winfo_exists():
+            return
+        frame = frames[frame_num % len(frames)]
         img_label.configure(image=frame)
-        inventory_window.after(delay, animate_gif, img_label, frames, delay, (frame_num + 1) % len(frames))
+        if inventory_window.winfo_exists():
+            inventory_window.after(delay, animate_gif, img_label, frames, delay, frame_num + 1)
 
     for item in inventory_items:
         if item.endswith(".json"):
@@ -540,6 +876,7 @@ def open_inventory():
             with open(os.path.join(inventory_path, item), 'r') as f:
                 item_data = json.load(f)
             item_name = item_data.get("name", "Bilinmeyen Ürün")
+            damage = item_data.get("Damage", 0)
 
             image_extensions = [".png", ".jpg", ".gif"]
             image_file = None
@@ -561,9 +898,10 @@ def open_inventory():
                     img_label = ctk.CTkLabel(item_frame, image=img, text="")
                     img_label.pack(side="left", padx=5)
 
-            item_label = ctk.CTkLabel(item_frame, text=item_name)
+            item_label = ctk.CTkLabel(item_frame, text=f"{item_name} (Hasar: {damage}%)")
             item_label.pack(side="left", padx=5)
 
+# Dolarları .dat dosyasında güncelle
 def update_dollars_in_dat_file(new_dollars):
     global dat_file_path
     if not os.path.exists(dat_file_path):
@@ -579,13 +917,73 @@ def update_dollars_in_dat_file(new_dollars):
                 file.write(f"Dollars: {new_dollars}\n")
             else:
                 file.write(line)
+    refresh_all_windows()  # Yenile
 
-def update_all_dollars():
-    global Dollars, Dollars_labels
-    for label in Dollars_labels:
-        if label.winfo_exists():  # Etiketin hala geçerli olup olmadığını kontrol et
-            label.configure(text=f"Dollars: {Dollars}")
+# Ödeme sistemi
+def Payment_system():
+    global Dollars, gas_bill, electric_bill, dat_file_path, Dollars_labels
 
+    payments_win = tk.Toplevel()
+    payments_win.title("Ödemeler")
+    payments_win.geometry("200x300")
+    user_home = os.path.expanduser("~")
+    icon_path = os.path.join(user_home, "Documents", "Mıne Of Crypto", "Mods", "Mine-Of-Crypto-Pool-An-Pools", "ICON", "MıneOfCryptoicon1.ico")
+    payments_win.iconbitmap(icon_path)
+
+    pixel_font = ctk.CTkFont(family="Press Start 2P", size=15)
+    Dollars_label_local = ctk.CTkLabel(payments_win, text=f"Dolar: {Dollars}", text_color="Green", font=pixel_font)
+    Dollars_label_local.pack(pady=10)
+    Dollars_labels.append(Dollars_label_local)
+    
+    gas_bill_label = ctk.CTkLabel(payments_win, text=f"Gaz Faturası: ${gas_bill}", text_color="Green", font=pixel_font)
+    gas_bill_label.pack(pady=10)
+    
+    electric_bill_label = ctk.CTkLabel(payments_win, text=f"Elektrik Faturası: ${electric_bill}", text_color="Green", font=pixel_font)
+    electric_bill_label.pack(pady=10)
+
+    active_windows['payments'] = {
+        'window': payments_win,
+        'Dollars_label': Dollars_label_local,
+        'gas_bill_label': gas_bill_label,
+        'electric_bill_label': electric_bill_label
+    }
+
+    def payment_system_for_pp():
+        global Dollars, gas_bill, electric_bill
+        if not os.path.exists(dat_file_path):
+            print("Veri dosyası bulunamadı!")
+            return
+
+        with open(dat_file_path, 'r') as file:
+            lines = file.readlines()
+
+        for line in lines:
+            if line.startswith("Dollars:"):
+                Dollars = float(line.split(":")[1].strip())
+            elif line.startswith("Gas Bill:"):
+                gas_bill = float(line.split(":")[1].strip())
+            elif line.startswith("Electric Bill:"):
+                electric_bill = float(line.split(":")[1].strip())
+
+        total_bills = gas_bill + electric_bill
+        if Dollars >= total_bills:
+            Dollars -= total_bills
+            gas_bill = 0
+            electric_bill = 0
+            print("Faturalar ödendi!")
+            gas_bill_label.configure(text=f"Gaz Faturası: ${gas_bill}")
+            electric_bill_label.configure(text=f"Elektrik Faturası: ${electric_bill}")
+            update_all_values_in_dat_file()
+            refresh_all_windows()  
+        else:
+            print("Yetersiz bakiye! Faturaları ödemek için yeterli paranız yok.")
+
+    pay_button = tk.Button(payments_win, text="Faturaları Öde", command=payment_system_for_pp)
+    pay_button.pack(pady=20)
+
+    payments_win.mainloop()
+
+# Ürün satın alma
 def purchase_item(item, price):
     global Dollars
     if Dollars >= price:
@@ -602,6 +1000,7 @@ def purchase_item(item, price):
         timestamp = int(time.time())
         item_file = os.path.join(inventory_path, f"{item_name}_{timestamp}.json")
         
+        item["Damage"] = 0
         item_details = json.dumps(item)
         with open(item_file, 'w') as f:
             f.write(item_details)
@@ -613,93 +1012,28 @@ def purchase_item(item, price):
             shutil.copy(image_path, image_dest)
         
         print(f"{item_name} başarıyla alındı ve envantere eklendi.")
-        update_all_dollars()
+        refresh_all_windows() 
     else:
         print("Yetersiz bakiye! Ürün satın alınamadı.")
 
-def Payment_system():
-    global Dollars, electric_bill, gas_bill, dat_file_path, Dollars_labels
-
-    payments_win = tk.Toplevel()
-    payments_win.title("Ödemeler")
-    payments_win.geometry("200x300")
-    user_home = os.path.expanduser("~")
-    icon_path = os.path.join(user_home, "Documents", "Mıne Of Crypto", "Mods", "Mine-Of-Crypto-Pool-An-Pools", "ICON", "MıneOfCryptoicon1.ico")
-    payments_win.iconbitmap(icon_path)
-
-    # Etiketleri tanımla
-    pixel_font = ctk.CTkFont(family="Press Start 2P", size=15)
-    Dollars_label_local = ctk.CTkLabel(payments_win, text=f"Dollars: {Dollars}", text_color="Green", font=pixel_font)
-    Dollars_label_local.pack(pady=10)
-    Dollars_labels.append(Dollars_label_local)
-    
-    electric_bill_label = ctk.CTkLabel(payments_win, text=f"Elektrik Faturası: {electric_bill}", text_color="Blue", font=pixel_font)
-    electric_bill_label.pack(pady=10)
-    
-    gas_bill_label = ctk.CTkLabel(payments_win, text=f"Gaz Faturası: {gas_bill}", text_color="Green", font=pixel_font)
-    gas_bill_label.pack(pady=10)
-
-    def payment_system_for_pp():
-        global Dollars, electric_bill, gas_bill
-        if not os.path.exists(dat_file_path):
-            print("Veri dosyası bulunamadı!")
-            return
-
-        with open(dat_file_path, 'r') as file:
-            lines = file.readlines()
-
-        for line in lines:
-            if line.startswith("Dollars:"):
-                Dollars = int(line.split(":")[1].strip())
-            elif line.startswith("Electric Bill:"):
-                electric_bill = int(line.split(":")[1].strip())
-            elif line.startswith("Gas Bill:"):
-                gas_bill = int(line.split(":")[1].strip())
-
-        total_bills = electric_bill + gas_bill
-        if Dollars >= total_bills:
-            Dollars -= total_bills
-            electric_bill = 0
-            gas_bill = 0
-            print("Faturalar ödendi!")
-            update_all_dollars()
-            electric_bill_label.configure(text=f"Elektrik Faturası: {electric_bill}")
-            gas_bill_label.configure(text=f"Gaz Faturası: {gas_bill}")
-
-            with open(dat_file_path, 'w') as file:
-                for line in lines:
-                    if line.startswith("Dollars:"):
-                        file.write(f"Dollars: {Dollars}\n")
-                    elif line.startswith("Electric Bill:"):
-                        file.write("Electric Bill: 0\n")
-                    elif line.startswith("Gas Bill:"):
-                        file.write("Gas Bill: 0\n")
-                    else:
-                        file.write(line)
-        else:
-            print("Yetersiz bakiye! Faturaları ödemek için yeterli paranız yok.")
-
-    pay_button = tk.Button(payments_win, text="Faturaları Öde", command=payment_system_for_pp)
-    pay_button.pack(pady=20)
-
-    payments_win.mainloop()
-
-def select_item(item_details):
-    details_window = ctk.CTkToplevel()
-    details_window.title(f"{item_details['name']} Detayları")
-    
-    detail_font = ctk.CTkFont(family="Arial", size=12)
-    for key, value in item_details.items():
-        label_text = f"{key}: {value}"
-        detail_label = ctk.CTkLabel(details_window, text=label_text, font=detail_font)
-        detail_label.pack(pady=5)
-
+# Shop sys
 def Shop_system():
     global Dollars, Dollars_labels
     user_profile = os.environ.get('USERPROFILE')
     shop_paths = os.path.join(user_profile, 'Documents', 'Mıne Of Crypto', 'Mods', 'CryptoMınıng gane')
     json_path = os.path.join(shop_paths, 'ıtems.json')
     pixel_font = ctk.CTkFont(family="Press Start 2P", size=15)
+    pygame.init()
+    pygame.mixer.init()
+    pygame.mixer.music.load(shop_music)  
+    pygame.mixer.music.play(-1)
+    #Funcitons
+    def on_close():
+        pygame.mixer.music.stop()  
+        shop_window.destroy()  
+        time.sleep(1)
+        pygame.mixer.music.load(main_music_path)  
+        pygame.mixer.music.play(-1)
 
     if not os.path.exists(dat_file_path):
         print("Veri dosyası bulunamadı!")
@@ -709,7 +1043,7 @@ def Shop_system():
         lines = file.readlines()
         for line in lines:
             if line.startswith("Dollars:"):
-                Dollars = int(line.split(":")[1].strip())
+                Dollars = float(line.split(":")[1].strip())
 
     if not os.path.exists(json_path):
         print("Mağaza JSON dosyası bulunamadı.")
@@ -717,11 +1051,11 @@ def Shop_system():
 
     with open(json_path, "r", encoding="utf-8") as files:
         data = json.load(files)
-
     shop_items = data.get("items", [])
     shop_window = ctk.CTkToplevel()
     shop_window.title("Mağaza")
-    shop_window.geometry("400x600")
+    shop_window.geometry("600x600")
+    shop_window.attributes("-topmost", True)
 
     taskbar = ctk.CTkFrame(shop_window, height=30, corner_radius=0, fg_color="gray")
     taskbar.pack(fill="x", side="top")
@@ -730,13 +1064,21 @@ def Shop_system():
     Dollars_label.pack(side="left")
     Dollars_labels.append(Dollars_label)
 
+    active_windows['shop'] = {
+        'window': shop_window,
+        'Dollars_label': Dollars_label
+    }
+
     scroll_frame = ctk.CTkScrollableFrame(shop_window, width=330, height=400)
     scroll_frame.pack(padx=10, pady=5, fill="both", expand=True)
 
     def animate_gif(img_label, frames, delay=200, frame_num=0):
-        frame = frames[frame_num]
+        if not img_label.winfo_exists() or not shop_window.winfo_exists():
+            return
+        frame = frames[frame_num % len(frames)]
         img_label.configure(image=frame)
-        shop_window.after(delay, animate_gif, img_label, frames, delay, (frame_num + 1) % len(frames))
+        if shop_window.winfo_exists():
+            shop_window.after(delay, animate_gif, img_label, frames, delay, frame_num + 1)
 
     def buy_item(item):
         item_price = item.get("price", 0)
@@ -766,9 +1108,23 @@ def Shop_system():
 
         buy_button = ctk.CTkButton(item_frame, text=f"Satın Al: {item.get('price', 0)}$", command=lambda item=item: buy_item(item))
         buy_button.pack(side="left", padx=10)
+        shop_window.protocol("WM_DELETE_WINDOW", on_close)
+# Show ıtem detaıls
+def select_item(item_details):
+    details_window = ctk.CTkToplevel()
+    details_window.title(f"{item_details['name']} Detayları")
+    
+    detail_font = ctk.CTkFont(family="Arial", size=12)
+    for key, value in item_details.items():
+        label_text = f"{key}: {value}"
+        detail_label = ctk.CTkLabel(details_window, text=label_text, font=detail_font)
+        detail_label.pack(pady=5)
 
+
+
+#Game Checker
 def start_game_check_files_sys():
-    global world_folder, dat_file_path, Dollars, electric_bill, gas_bill, Level, Dollars_labels
+    global world_folder, dat_file_path, Dollars, gas_bill, electric_bill, Level, Dollars_labels, moc_coins, room_temperature, using_power
     user_profile = os.environ.get('USERPROFILE')
     path = os.path.join(user_profile, 'Documents', 'Mıne Of Crypto', 'Cache')
     
@@ -787,11 +1143,13 @@ def start_game_check_files_sys():
     pixel_font = ctk.CTkFont(family="Press Start 2P", size=15)
 
     def start_selected_game():
-        global world_folder, dat_file_path, Dollars, electric_bill, gas_bill, Level, Dollars_labels
+        global world_folder, dat_file_path, Dollars, gas_bill, electric_bill, Level, Dollars_labels, moc_coins, room_temperature, using_power,main_music_path
         selected_world = world_var.get()
+        main_music_path = os.path.join(sounds_path, 'GameSoundALone.mp3')
         if selected_world:
             world_folder = os.path.join(path, selected_world)
             dat_file_path = os.path.join(world_folder, f"{selected_world}.dat")
+            
 
             if not os.path.exists(dat_file_path):
                 print("Seçilen dünya dosyası bulunamadı.")
@@ -801,46 +1159,84 @@ def start_game_check_files_sys():
                 for line in file:
                     if line.startswith("Level:"):
                         Level = int(line.split(":")[1].strip())
+                    elif line.startswith("Xp:"):
+                        xp = float(line.split(":")[1].strip())
                     elif line.startswith("Dollars:"):
-                        Dollars = int(line.split(":")[1].strip())
-                    elif line.startswith("Electric Bill:"):
-                        electric_bill = int(line.split(":")[1].strip())
+                        Dollars = float(line.split(":")[1].strip())
                     elif line.startswith("Gas Bill:"):
-                        gas_bill = int(line.split(":")[1].strip())
+                        gas_bill = float(line.split(":")[1].strip())
+                    elif line.startswith("Electric Bill:"):
+                        electric_bill = float(line.split(":")[1].strip())
                     elif line.startswith("Total Power:"):
                         total_power = int(line.split(":")[1].strip())
+                    elif line.startswith("MOC Coins:"):
+                        moc_coins = float(line.split(":")[1].strip())
+                    elif line.startswith("Room Temperature:"):
+                        room_temperature = float(line.split(":")[1].strip())
+                    elif line.startswith("Using Power:"):
+                        using_power = int(line.split(":")[1].strip())
+                    elif line.startswith("Musics:"):
+                        global musics_stats
+                        musics_stats = line.split(":")[1].strip() == "True"
+        
+            # Load settings
+            pygame.init()
+            pygame.mixer.init()
+            pygame.mixer.music.load(main_music_path)
+            load_settings_from_file()  # Ayarları yükle
+            pygame.mixer.music.play(-1)
 
             game_window = ctk.CTkToplevel()
             game_window.title(f"{selected_world} - Oyun")
-            game_window.geometry("400x300")
-            
+            game_window.geometry("500x300")
+            #Funcitons
+            def on_close():
+                pygame.mixer.music.stop()  # Müzik durdur
+                game_window.destroy()  # Pencereyi kapat
+
+            game_window.protocol("WM_DELETE_WINDOW", on_close)
+
+            #fRAME
             taskbar = ctk.CTkFrame(game_window, height=30, corner_radius=0, fg_color="gray")
             taskbar.pack(fill="x", side="top")
             vertical_bar = ctk.CTkFrame(game_window, height=30, width=90, corner_radius=0, fg_color="grey")
             vertical_bar.pack(fill="y", side="right")
-            under_panel=ctk.CTkFrame(game_window, height=30, corner_radius=0, fg_color="gray")
-            under_panel.pack(fill="x",side="bottom")
-
+            under_panel = ctk.CTkFrame(game_window, height=30, corner_radius=0, fg_color="gray")
+            under_panel.pack(fill="x", side="bottom")
+            #bUTTON
             inventory_button = tk.Button(vertical_bar, text="Envanter", command=open_inventory, background="Blue", fg="Red", font=pixel_font)
             inventory_button.pack(side="top", padx=10, pady=10)
             Shop_Button = tk.Button(vertical_bar, text="Mağaza", command=Shop_system, background="Blue", fg="green", font=pixel_font)
-            Shop_Button.pack(side="top", padx=5, pady=20)
-            payment_bill_button = tk.Button(vertical_bar, text="Ödemeler", command=Payment_system, background="Red")
-            payment_bill_button.pack(side="top", padx=5, pady=20)
-            rooms_button = tk.Button(vertical_bar,text="Rooms",command=Rooms_system,background="Purple",fg="Black")
-            rooms_button.pack(side="top",padx=5,pady=20)
+            Shop_Button.pack(side="top", padx=5, pady=10)
+            payment_bill_button = tk.Button(vertical_bar, text="Ödemeler", command=Payment_system, background="Red", font=pixel_font)
+            payment_bill_button.pack(side="top", padx=5, pady=10)
+            rooms_button = tk.Button(vertical_bar, text="Rooms", command=Rooms_system, background="Purple", fg="Black", font=pixel_font)
+            rooms_button.pack(side="top", padx=5, pady=10)
+            settings_button = tk.Button(vertical_bar, text="Ayarlar", command=Settings_system, background="Gray", fg="White", font=pixel_font)
+            settings_button.pack(side="top", padx=5, pady=10)
 
+            #lABEL
             level_label = ctk.CTkLabel(taskbar, text=f"Seviye: {Level}", text_color="white")
             level_label.pack(side="left", padx=10)
+            xp_label = ctk.CTkLabel(vertical_bar, text=f"Xp:{xp}", text_color="Green")
+            xp_label.pack()
             Dollars_label = ctk.CTkLabel(taskbar, text=f"Dollars: {Dollars}", text_color="Green")
             Dollars_label.pack(side="left", padx=11)
             Dollars_labels.append(Dollars_label)
-            electric_bill_label = ctk.CTkLabel(taskbar, text=f"Elektrik Faturası: {electric_bill}", text_color="Blue")
-            electric_bill_label.pack(side="left", padx=7)
-            gas_bill_label = ctk.CTkLabel(taskbar, text=f"Gaz Faturası: {gas_bill}", text_color="Green")
+            gas_bill_label = ctk.CTkLabel(taskbar, text=f"Gaz Faturası: ${gas_bill}", text_color="Green")
             gas_bill_label.pack(side="right", padx=5)
+            electric_bill_label = ctk.CTkLabel(taskbar, text=f"Elektrik Faturası: ${electric_bill}", text_color="Green")
+            electric_bill_label.pack(side="right", padx=5)
+            
+            active_windows['game'] = {
+                'window': game_window,
+                'Dollars_label': Dollars_label,
+                'gas_bill_label': gas_bill_label,
+                'electric_bill_label': electric_bill_label
+            }
             
             world_selection_win.destroy()
+            refresh_all_windows()  # Yenile
     
     world_var = tk.StringVar(value=worlds[0])
     label = ctk.CTkLabel(world_selection_win, text="Bir dünya seçin:")
@@ -853,6 +1249,44 @@ def start_game_check_files_sys():
     start_button = ctk.CTkButton(world_selection_win, text="Başlat", command=start_selected_game)
     start_button.pack(pady=10)
 
+
+
+def gameselecter_core_loader():
+    global loader_screen_win
+    loader_screen_win = tk.Toplevel()
+    loader_screen_win.title("MoonDevelopGame")
+    loader_screen_win.geometry("300x300")
+    loader_screen_win.attributes("-toolwindow",True)
+    loader_screen_win.resizable(False, False)
+    loader_screen_win.overrideredirect(False) 
+    #path
+    screen_png_path = os.path.join(user_profile,'Documents', 'Mıne Of Crypto', 'Mods',"ICON")
+    screen_png = os.path.join(screen_png_path, "MoonDevelopGame.png")
+    #Load Sys
+    image = Image.open(screen_png)
+    image = image.resize((300, 300), Image.LANCZOS)
+    logo = ImageTk.PhotoImage(image)
+
+    label = tk.Label(loader_screen_win, image=logo)
+    label.place(x=0, y=0, relwidth=1, relheight=1) 
+
+    #updater
+    loader_screen_win.update_idletasks()
+    screen_width = loader_screen_win.winfo_screenwidth()
+    screen_height  = loader_screen_win.winfo_screenheight()
+    x = (screen_width - 800) // 2
+    y = (screen_height - 600) // 2
+    loader_screen_win.geometry(f"300x300+{x}+{y}")
+    loader_screen_win.after(2000, lambda:[loader_screen_win.destroy(),start_game_check_files_sys()])
+
+
+    loader_screen_win.mainloop()
+
+
+
+
+
+#Main
 def main():
     main = ctk.CTk()
     main.title("Mıne Of Crypto Menü")
@@ -865,11 +1299,13 @@ def main():
     pixel_font = ctk.CTkFont(family="Press Start 2P", size=15)
     
     def new_game_sys():
+        global new_game_win
         new_game_win = ctk.CTkToplevel()
         new_game_win.title("Bilgiler")
         new_game_win.geometry("200x200")
 
         def get_game_name_entry_folder():
+            global using_power
             game_name = game_name_entry.get().strip()
             if not game_name:
                 print("Lütfen geçerli bir oyun ismi girin.")
@@ -899,25 +1335,37 @@ def main():
                 with open(file_path, 'w') as f:
                     f.write(f"Game name: {game_name}\n")
                     f.write(f"Level: {Level}\n")
+                    f.write(f"Xp:{xp}\n")
                     f.write(f"Dollars: {Dollars}\n")
-                    f.write(f"Electric Bill: {electric_bill}\n")
                     f.write(f"Gas Bill: {gas_bill}\n")
+                    f.write(f"Electric Bill: {electric_bill}\n")
                     f.write(f"Total Power:{total_power}\n")
-                    f.write(f"PoweTypes:{power_types}")
+                    f.write(f"PoweTypes:{power_types}\n")
+                    f.write(f"MOC Coins:{moc_coins}\n")
+                    f.write(f"Room Temperature:{room_temperature}\n")
+                    f.write(f"Using Power:{using_power}\n")
+                    f.write(f"Musics:{musics_stats}\n")
                 print(f"{file_name} dosyası oluşturuldu ve '{game_folder}' içine kaydedildi.")
                 
-                # Create Inventory folder
                 inventory_folder = os.path.join(game_folder, 'Inventory')
                 if not os.path.exists(inventory_folder):
                     os.makedirs(inventory_folder)
                     print(f"'Envanter' klasörü '{game_folder}' içinde oluşturuldu.")
                 
-                # Create Rooms folder
                 rooms_folder = os.path.join(game_folder, 'Rooms')
                 if not os.path.exists(rooms_folder):
                     os.makedirs(rooms_folder)
                     print(f"'Rooms' klasörü '{game_folder}' içinde oluşturuldu.")
-                    new_game_win.destroy()
+                
+                # Varsayılan ayarları kaydet
+                settings_file_path = os.path.join(game_folder, "settings.dat")
+                with open(settings_file_path, 'w') as f:
+                    f.write("Music: True\n")
+                    f.write("Volume: 0.5\n")
+                print(f"Varsayılan ayarlar '{settings_file_path}' dosyasına kaydedildi.")
+                
+                new_game_win.destroy()
+            refresh_all_windows()  
 
         game_name_entry = ctk.CTkEntry(new_game_win, placeholder_text="Oyun Adı", placeholder_text_color="Blue")
         game_name_entry.pack(anchor="n", pady=10)
@@ -933,7 +1381,7 @@ def main():
     
     New_game_button = tk.Button(on_top_frame, text="Yeni Oyun", command=new_game_sys, background="Green", fg="Blue", font=pixel_font)
     New_game_button.pack(anchor="n", padx=10)
-    start_game_button = tk.Button(main, text="Oyunu Başlat", command=start_game_check_files_sys, background="Green", fg="Blue", font=pixel_font)
+    start_game_button = tk.Button(main, text="Oyunu Başlat", command=gameselecter_core_loader, background="orange", fg="Blue", font=pixel_font)
     start_game_button.pack(anchor="s", pady=10)
 
     MoonDevelop_label = ctk.CTkLabel(main, text="MoonDevelop", text_color="Blue", font=pixel_font)
@@ -941,4 +1389,5 @@ def main():
 
     main.mainloop()
 
-main()
+if __name__ == "__main__":
+    main_loader()
