@@ -1389,5 +1389,4 @@ def main():
 
     main.mainloop()
 
-if __name__ == "__main__":
-    main_loader()
+main_loader()
