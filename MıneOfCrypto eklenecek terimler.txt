@@ -2,3 +2,7 @@ Max Degree   max degree  ekran kartının en fazla kaç derece sıcaklığa
 dayanabileceğini söyler  belli sıcaklıktan sonra fanlar döner  yada coolera sahip olanlar yavaş yavaş soğur
 
 Room Degree  oda sıcaklığını temsil eder oda sıcaklığı gpunun anlık sıcaklıını arttırabilir yada düşürebilir
+
+
+
+Not:Mıne Of Crypto oyununda  offlineyi alıp  dünya oluşturma sistemini kapatsın direkt oyuna geçsin oyun bilgileri git deki pooldan alıncak

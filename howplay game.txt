@@ -1,0 +1,36 @@
+How Join Online 
+Onlineye katılmak için MıneOfCrypto Online Paketi Bilgisayarınıza Yüklemeli 
+sonrada o dosyayı Documents lerde Mıne Of Crypto klasörünün Mod klasörünün içine 
+atınız
+
+
+How Play
+Main Game:
+Oyun içindeki paralar ile gpu,psu ve racks lar alarak  coin üretimine başlarsınız
+bu coin üretimi sonrası size coin verilir bu coin miktarları gpu larınızın gücüne bağlıdır
+elde ettiğiniz her 1 milyon MOC coini  size  belirli bir gerçek paraya tekabul ettiricektir
+
+
+
+Oyun İçi Pencereler Görülmüyor:
+Oyun içi Pencereler aslında varlar ama arka plana atılıyor bazıları o yüzden bilgisayarınızda bazı 
+gereksiz pencereleri kapatarak yada aşağı alarak  yeni pencereleri kullanınız.
+Uyarı:her pencere sadece 1 tane açık olsun aynı pencereden 1 den fazla açık olmasın.
+
+
+
+
+Oyun içi MarketPlace ile CMarket arasındaki fark:
+MarketPlace  sadece ürünlerin satıcısı Mıne Of Cryptoya bağlıdır
+CMarket ise ürünlerin satıcıları farklı kişilerdir ve  CMarketde sadece gerçek para ile
+işlem yapılır.
+
+
+
+Nasıl İtem Satış Yaparım:
+Oyun içi itemlerinizi satmak veya almak için CMarket Inventory Id niz olmalıdır
+bu ID ye sahip olmak için  Mıne Of Crypto web sitesinden CMarket hesabı açmanız gerekmektedir
+ve açılan hesabın CMarket Account ID sini oyun içine entegre etmelisiniz
+
+CMarket Account ID Oyun içine Entegre Etme:
+CMarket Account ID entegre etmek için oyun menüsünden IDENTEGER bölümüne ıd nizi girmelisiniz.
